@@ -155,9 +155,9 @@ The game does not generate its own mazes; it interfaces with the assigned `mazeg
 
 ---
 
-## 🏗️ General Software Architecture & Implementation
+## 🏗️ General Software Architecture
 
-The project follows a decoupled, modular Model-View-Controller (MVC) architecture:
+The project follows a decoupled, modular Model-View-Controller (MVC) architecture with clear separation of concerns across logic, rendering, and data translation:
 
 ```
                       ┌────────────────────────┐
@@ -181,19 +181,38 @@ The project follows a decoupled, modular Model-View-Controller (MVC) architectur
  └────────────────────┘ └────────────────────┘ └────────────────────┘
 ```
 
-### Module Roles
+### Module & Class Relationships
 - **`pacman/models.py`**:
-  - `Direction`: Vector representations (`UP`, `DOWN`, `LEFT`, `RIGHT`) with reversal logic.
-  - `Player`: Manages buffered inputs, grid alignment, speed, and invincibility.
-  - `Ghost`: State machine (`CHASE`, `SCATTER`, `FRIGHTENED`, `EATEN`) with Euclidean distance targeting.
+  - `Direction`: Enumeration of 2D direction vectors (`UP`, `DOWN`, `LEFT`, `RIGHT`) providing coordinate deltas and opposite direction computation.
+  - `Player`: Encapsulates Pac-Man state, speed, continuous corridor motion, input buffering, and cheat invincibility.
+  - `Ghost`: Autonomous agent encapsulating personality targeting, FSM modes (`CHASE`, `FRIGHTENED`, `EATEN`), and tile-based Euclidean routing.
 - **`pacman/adapter.py`**:
-  - Bridges the external generator to internal movement checks (`can_move()`).
+  - `MazeAdapter`: Wraps `MazeGenerator` from `mazegenerator-2.1.0-py3-none-any.whl`, exposing `can_move()`, BFS corridor discovery, and fallback procedural maps.
 - **`pacman/game.py`**:
-  - Central controller handling score, lives, level transitions, timers, and cheat toggles.
+  - `Game`: Core controller managing transitions between `GameState` values (`MENU`, `PLAYING`, `PAUSED`, `GAME_OVER`, `VICTORY`, `HIGHSCORES`, `INSTRUCTIONS`), consumable tracking, score, lives, level timers, and cheat key toggles.
 - **`pacman/renderer.py`**:
-  - Pure primitive rendering (draw lines, circles, rects) conforming to the MiniLibX philosophy.
+  - `Renderer`: MLX-style rasterizer drawing geometric shapes (`pygame.draw.line`, `pygame.draw.circle`, `pygame.draw.rect`) and rendering text HUD surfaces without external image sprites.
 - **`pacman/highscores.py`**:
-  - Manages persistent top-score records with name validation.
+  - `HighscoreManager`: Handles persistent disk I/O, regex name sanitization, descending sort, and corrupted file recovery.
+- **`pacman/config.py`**:
+  - `ConfigLoader`: Defensive JSON parser with comment removal (`#`, `//`, `/* */`), case-insensitive key normalization, and value clamping.
+
+---
+
+## 💻 Implementation
+
+### Technical Summary & Core Mechanics
+1. **Delta-Time & Frame Independence**:
+   - The game loop runs at 60 FPS utilizing `pygame.time.Clock.tick(60)`. Movement speeds (expressed in pixels per second) are scaled by elapsed time $\Delta t$ to guarantee identical movement speeds across different machines.
+2. **Bitwise Corridor Traversal**:
+   - Corridors are governed by bitmask wall encoding: `1=North`, `2=East`, `4=South`, `8=West`, and `15=Solid 42 block`.
+   - Motion between tile $(x, y)$ and $(x+dx, y+dy)$ checks both current wall bits and the neighbor's opposing bit in $O(1)$ constant time, preventing wall clipping.
+3. **Turn Buffering (Cornering)**:
+   - Pac-Man queues user directional inputs. If the player presses a turn key before an intersection, the turn executes the exact moment the perpendicular corridor becomes walkable.
+4. **Finite State Machine (FSM)**:
+   - Ghost states (`CHASE`, `FRIGHTENED`, `EATEN`) transition based on game events (eating super-pacgums, timers, reaching home spawn).
+5. **Zero Traceback Defensive Guarantee**:
+   - Every file interaction, command-line parameter, and runtime event is enclosed in guarded exception blocks, logging helpful diagnostic alerts to `stdout` rather than crashing.
 
 ---
 
