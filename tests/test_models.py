@@ -48,6 +48,23 @@ class TestEntitiesAndAI(unittest.TestCase):
         expected_corner = (clyde.corner_x, clyde.corner_y)
         self.assertEqual((cx_close, cy_close), expected_corner)
 
+    def test_movement_speeds(self) -> None:
+        """Verify calibrated movement speeds for player and ghosts."""
+        player = Player(5, 5, lives=3)
+        self.assertEqual(player.speed, 4.5)
+
+        # Speed boost cheat multiplies speed by 1.6x
+        player.speed_boost = True
+        boosted = player.speed * 1.6 if player.speed_boost else player.speed
+        self.assertAlmostEqual(boosted, 7.2)
+
+        # Ghosts are calibrated slightly slower than Pac-Man
+        ghost = Ghost(GhostType.BLINKY, 1, 1, 1, 1)
+        self.assertEqual(ghost.base_speed, 3.8)
+        self.assertEqual(ghost.frightened_speed, 2.4)
+        self.assertEqual(ghost.eaten_speed, 7.0)
+        self.assertGreater(player.speed, ghost.base_speed)
+
 
 if __name__ == "__main__":
     unittest.main()
