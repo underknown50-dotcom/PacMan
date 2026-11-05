@@ -23,19 +23,44 @@ class TestConfigLoader(unittest.TestCase):
     """Test defensive JSON loading, comment stripping, and edge cases."""
 
     def test_strip_comments(self) -> None:
-        """Verify '#' comments and trailing comments are removed."""
+        """Verify '#' comments, trailing commas, and block comments."""
         raw = (
             "# Top level comment\n"
+            "/* Multi-line\n"
+            "   C-style block comment */\n"
             "{\n"
             '    "lives": 5, # In-line comment\n'
             '    // C-style comment\n'
-            '    "seed": 99\n'
+            '    "name": "level#1", // string with hash\n'
+            '    "seed": 99, // trailing comma below\n'
             "}\n"
         )
         cleaned = ConfigLoader.strip_comments(raw)
         self.assertNotIn("# Top level", cleaned)
+        self.assertNotIn("C-style block", cleaned)
         self.assertNotIn("// C-style", cleaned)
         self.assertIn('"lives": 5', cleaned)
+        self.assertIn('"level#1"', cleaned)
+
+    def test_key_aliases(self) -> None:
+        """Verify indicative aliases like 'pacgum' and 'time' are read."""
+        with tempfile.NamedTemporaryFile(
+            "w", suffix=".json", delete=False
+        ) as f:
+            f.write(
+                '{"pacgum": 42, "super_pacgum": 100, "ghost": 500, "time": 65}'
+            )
+            path = f.name
+
+        try:
+            cfg = ConfigLoader.load(path)
+            self.assertEqual(cfg.points_per_pacgum, 42)
+            self.assertEqual(cfg.points_per_super_pacgum, 100)
+            self.assertEqual(cfg.points_per_ghost, 500)
+            self.assertEqual(cfg.level_max_time, 65)
+        finally:
+            if os.path.exists(path):
+                os.remove(path)
 
     def test_missing_file_fallback(self) -> None:
         """Verify missing file does not raise an exception."""

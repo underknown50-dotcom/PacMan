@@ -67,16 +67,53 @@ class ConfigLoader:
 
     @classmethod
     def strip_comments(cls, content: str) -> str:
-        """Strip lines starting with '#' or '//' and trailing comments."""
+        """Strip comments (#, //, /* */) and trailing commas safely.
+
+        Ensures that '#' or '//' characters occurring inside quoted strings
+        are not treated as comments.
+        """
+        # 1. Remove C-style block comments /* ... */
+        no_block = re.sub(r"/\*.*?\*/", "", content, flags=re.DOTALL)
+
+        # 2. State-machine scanner to preserve hashes/slashes inside quotes
         cleaned_lines: List[str] = []
-        for line in content.splitlines():
-            stripped = line.strip()
-            if stripped.startswith("#") or stripped.startswith("//"):
-                continue
-            # Remove inline comments if present outside of quoted strings
-            cleaned_line = re.sub(r"\s*(#|//).*$", "", line)
-            cleaned_lines.append(cleaned_line)
-        return "\n".join(cleaned_lines)
+        for line in no_block.splitlines():
+            in_str = False
+            esc = False
+            chars: List[str] = []
+            idx = 0
+            while idx < len(line):
+                ch = line[idx]
+                if in_str:
+                    chars.append(ch)
+                    if esc:
+                        esc = False
+                    elif ch == "\\":
+                        esc = True
+                    elif ch == '"':
+                        in_str = False
+                else:
+                    if ch == '"':
+                        in_str = True
+                        chars.append(ch)
+                    elif ch == "#":
+                        break
+                    elif (
+                        ch == "/"
+                        and idx + 1 < len(line)
+                        and line[idx + 1] == "/"
+                    ):
+                        break
+                    else:
+                        chars.append(ch)
+                idx += 1
+            cleaned_lines.append("".join(chars))
+
+        merged = "\n".join(cleaned_lines)
+
+        # 3. Strip trailing commas before closing braces/brackets
+        normalized = re.sub(r",\s*([\]}])", r"\1", merged)
+        return normalized
 
     @classmethod
     def load(cls, file_path: str) -> GameConfig:
@@ -102,13 +139,20 @@ class ConfigLoader:
             return defaults
 
         try:
-            with open(file_path, "r", encoding="utf-8") as file:
+            with open(file_path, "r", encoding="utf-8-sig") as file:
                 raw_content = file.read()
         except OSError as err:
             print(f"[Config Warning] Cannot read '{file_path}': {err}.")
             return defaults
 
         cleaned = cls.strip_comments(raw_content)
+
+        if not cleaned.strip():
+            print(
+                f"[Config Warning] '{file_path}' is empty; "
+                "using default configuration."
+            )
+            return defaults
 
         try:
             raw_data = json.loads(cleaned)
@@ -133,10 +177,10 @@ class ConfigLoader:
     ) -> GameConfig:
         """Parse dictionary values and clamp them to safe ranges."""
         highscore_filename = defaults.highscore_filename
-        if "highscore_filename" in data:
-            val = data["highscore_filename"]
-            if isinstance(val, str) and val.strip():
-                highscore_filename = val.strip()
+        raw_hs = data.get("highscore_filename") or data.get("highscore")
+        if raw_hs is not None:
+            if isinstance(raw_hs, str) and raw_hs.strip():
+                highscore_filename = raw_hs.strip()
             else:
                 print(
                     "[Config Warning] 'highscore_filename' invalid; "
@@ -151,32 +195,52 @@ class ConfigLoader:
             "lives",
         )
 
+        raw_pacgum = (
+            data.get("points_per_pacgum")
+            if "points_per_pacgum" in data
+            else data.get("pacgum")
+        )
         pts_pacgum = cls._clamp_int(
-            data.get("points_per_pacgum"),
+            raw_pacgum,
             defaults.points_per_pacgum,
             cls.MIN_POINTS,
             cls.MAX_POINTS,
             "points_per_pacgum",
         )
 
+        raw_super = (
+            data.get("points_per_super_pacgum")
+            if "points_per_super_pacgum" in data
+            else data.get("super_pacgum")
+        )
         pts_super = cls._clamp_int(
-            data.get("points_per_super_pacgum"),
+            raw_super,
             defaults.points_per_super_pacgum,
             cls.MIN_POINTS,
             cls.MAX_POINTS,
             "points_per_super_pacgum",
         )
 
+        raw_ghost = (
+            data.get("points_per_ghost")
+            if "points_per_ghost" in data
+            else data.get("ghost")
+        )
         pts_ghost = cls._clamp_int(
-            data.get("points_per_ghost"),
+            raw_ghost,
             defaults.points_per_ghost,
             cls.MIN_POINTS,
             cls.MAX_POINTS,
             "points_per_ghost",
         )
 
+        raw_time = (
+            data.get("level_max_time")
+            if "level_max_time" in data
+            else data.get("time")
+        )
         level_max_time = cls._clamp_int(
-            data.get("level_max_time"),
+            raw_time,
             defaults.level_max_time,
             cls.MIN_TIME,
             cls.MAX_TIME,
