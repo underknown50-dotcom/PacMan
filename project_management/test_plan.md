@@ -9,10 +9,11 @@
 
 | Test Category | Test Cases | Automated / Manual | Result |
 |---|:---:|:---:|:---:|
-| **Configuration Resilience** | 4 | Automated (`tests/test_game.py`) | ✅ PASS |
-| **Highscore Persistence** | 3 | Automated (`tests/test_game.py`) | ✅ PASS |
-| **Maze Adapter & Bitmasks** | 3 | Automated (`tests/test_game.py`) | ✅ PASS |
-| **Entity States & Cheats** | 2 | Automated (`tests/test_game.py`) | ✅ PASS |
+| **Configuration Resilience** | 7 | Automated (`tests/test_config.py`) | ✅ PASS |
+| **Highscore Persistence** | 3 | Automated (`tests/test_highscores.py`) | ✅ PASS |
+| **Maze Adapter & Bitmasks** | 3 | Automated (`tests/test_adapter.py`) | ✅ PASS |
+| **Entity States & Ghost AI**| 3 | Automated (`tests/test_models.py`) | ✅ PASS |
+| **Game Engine & Cheats**     | 5 | Automated (`tests/test_game.py`) | ✅ PASS |
 | **Code Style (`flake8`)** | Entire Repo | Automated (`make lint`) | ✅ PASS (0 errors) |
 | **Static Types (`mypy`)** | Entire Repo | Automated (`make lint-strict`) | ✅ PASS (0 errors) |
 | **Interactive Gameplay** | 8 | Manual (Ubuntu WSL) | ✅ PASS |

@@ -1,7 +1,13 @@
+"""Minimal display test script.
+
+Verifies Pygame window initialization, 60 FPS clock, and key events.
+"""
+
 import pygame
 
 
 def main() -> None:
+    """Initialize test window and run a minimal square-moving event loop."""
     pygame.init()
 
     screen = pygame.display.set_mode((640, 480))
@@ -35,9 +41,7 @@ def main() -> None:
             y += speed
 
         screen.fill((0, 0, 0))
-
         pygame.draw.rect(screen, (255, 255, 0), (x, y, 20, 20))
-
         pygame.display.flip()
 
     pygame.quit()

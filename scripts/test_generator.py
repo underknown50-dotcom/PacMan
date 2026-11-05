@@ -1,7 +1,14 @@
+"""Scratch script to inspect the external mazegenerator package.
+
+Prints dimensions, raw bitmask cell values, and ASCII maze corridors
+to stdout to verify non-perfect looping maze generation.
+"""
+
 from mazegenerator import MazeGenerator
 
 
 def main() -> None:
+    """Generate and display an ASCII representation of the maze."""
     generator = MazeGenerator(size=(15, 15), perfect=False, seed=42)
 
     grid = generator.maze

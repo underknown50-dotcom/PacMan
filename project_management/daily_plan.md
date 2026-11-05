@@ -53,11 +53,11 @@
   - [x] Initialize Git repository with a solid `.gitignore` (Python, virtual environment, OS files).
   - [x] Create `Makefile` with targets: `install`, `run`, `debug`, `clean`, `lint`.
   - [x] Install graphics dependency (`pygame-ce`).
-  - [x] Test a minimal window that opens, displays black background, and exits cleanly on `ESC` or window close (`test_window.py`).
+  - [x] Test a minimal window that opens, displays black background, and exits cleanly on `ESC` or window close (`scripts/test_window.py`).
 - [x] **Teammate B (Wheel Inspection & Research):**
   - [x] Unzip `mazegenerator-00001.zip` to obtain `mazegenerator-2.1.0-py3-none-any.whl`.
   - [x] Install the wheel into the virtual environment (`pip install wheels/...`).
-  - [x] Write a scratch script `test_generator.py` to discover the API.
+  - [x] Write a scratch script `scripts/test_generator.py` to discover the API.
   - [x] Successfully generate a maze with `PERFECT=False` and print its dimensions/structure to console.
 - [x] **Pair Work (Both):**
   - [x] Agree on Git branch workflow (`main`, `feature/graphics`, `feature/logic`).

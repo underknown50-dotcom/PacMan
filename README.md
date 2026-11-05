@@ -157,6 +157,52 @@ The game does not generate its own mazes; it interfaces with the assigned `mazeg
 
 ## 🏗️ General Software Architecture
 
+### 📂 Repository File & Directory Structure
+
+The repository is structured with clean separation between source code, test suites, developer scripts, and project management artifacts:
+
+```
+pac-man/
+├── Makefile                    # Automation: install, run, debug, clean, lint, test, package
+├── README.md                   # Complete project documentation & guide
+├── requirements.txt            # Python dependencies (pygame-ce, flake8, mypy, etc.)
+├── config.json                 # Default 10-level campaign configuration
+├── highscores.json             # Hall-of-fame persistent Top 10 records
+├── pac-man.py                  # Main executable entry point & CLI parser
+├── package.py                  # Automated PyInstaller packaging script
+├── pac-man.spec                # PyInstaller specification file
+├── pacman/                     # Core MVC game package
+│   ├── __init__.py             # Package marker
+│   ├── adapter.py              # External maze generator adapter & bitmasks
+│   ├── config.py               # Fault-tolerant JSON loader & validator
+│   ├── game.py                 # Central game engine & state machine
+│   ├── highscores.py           # Highscore manager with regex sanitization
+│   ├── models.py               # Entities: Player & 4 Ghost AI agents
+│   └── renderer.py             # MiniLibX-style raster graphics & UI screens
+├── project_management/         # Chapter 8 Project Management dossier
+│   ├── README.md               # Dossier index & Agile framework
+│   ├── daily_plan.md           # 14-day sprint roadmap & progress tracking
+│   ├── team_organization.md    # Roles, responsibilities & workflows
+│   ├── risk_analysis.md        # Risk identification & mitigation matrix
+│   ├── test_plan.md            # Acceptance QA plan & bug resolution log
+│   └── retrospective_and_analysis.md # Architectural rationale & blocking points
+├── scripts/                    # Developer utilities & exploration scripts
+│   ├── README.md               # Script usage instructions
+│   ├── test_generator.py       # Terminal maze ASCII visualizer
+│   └── test_window.py          # SDL window & display test utility
+├── tests/                      # Modular unit test suite (unittest)
+│   ├── __init__.py             # Test package marker
+│   ├── test_config.py          # Configuration parser & resilience tests
+│   ├── test_highscores.py      # Highscore persistence & sanitization tests
+│   ├── test_adapter.py         # Wheel integration & bitmask tests
+│   ├── test_models.py          # Player physics & Ghost AI tests
+│   └── test_game.py            # Game engine & cheat suite tests
+└── wheels/                     # Assigned binary distribution packages
+    └── mazegenerator-2.1.0-py3-none-any.whl
+```
+
+### Architectural Design (MVC)
+
 The project follows a decoupled, modular Model-View-Controller (MVC) architecture with clear separation of concerns across logic, rendering, and data translation:
 
 ```
