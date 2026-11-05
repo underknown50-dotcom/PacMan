@@ -226,7 +226,8 @@ Full project management artifacts and evidence are organized in the [`project_ma
 - [**`daily_plan.md`**](file:///c:/Users/7moody/Desktop/pac-man/project_management/daily_plan.md): 14-day sprint roadmap with task distribution and acceptance criteria.
 - [**`team_organization.md`**](file:///c:/Users/7moody/Desktop/pac-man/project_management/team_organization.md): Role allocation, decision protocols, and Git workflows.
 - [**`risk_analysis.md`**](file:///c:/Users/7moody/Desktop/pac-man/project_management/risk_analysis.md): Technical risks (config crashes, typing errors, packaging) and mitigations.
-- [**`test_plan.md`**](file:///c:/Users/7moody/Desktop/pac-man/project_management/test_plan.md): Acceptance test matrix and edge case verifications.
+- [**`test_plan.md`**](file:///c:/Users/7moody/Desktop/pac-man/project_management/test_plan.md): Acceptance test matrix, bug resolution log, and edge case verifications.
+- [**`retrospective_and_analysis.md`**](file:///c:/Users/7moody/Desktop/pac-man/project_management/retrospective_and_analysis.md): Architectural analysis, engineering decisions, and blocking points log.
 
 ---
 
