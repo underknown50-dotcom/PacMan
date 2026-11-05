@@ -17,7 +17,7 @@ env/
 build/
 dist/
 *.egg-info/
-*.spec
+!pac-man.spec
 
 # OS files
 .DS_Store

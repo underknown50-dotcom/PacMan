@@ -7,6 +7,7 @@ Ensures robust defense against corrupt configurations, missing arguments,
 or abnormal exits without ever outputting a Python traceback.
 """
 
+import os
 import sys
 import pygame
 from pacman.config import ConfigLoader
@@ -16,11 +17,22 @@ from pacman.renderer import Renderer
 
 
 def validate_args() -> str:
-    """Validate command line arguments according to Chapter 5.1.
+    """Validate command line arguments according to Chapter 5.1 and 7.
 
-    Requires exactly one argument ending in '.json'.
-    Exits cleanly with an informative message on error without a traceback.
+    In standard CLI execution, requires exactly one argument ending in '.json'.
+    When launched as a standalone packaged application (Chapter 7), defaults
+    to 'config.json' located next to the executable if no argument is given.
     """
+    is_frozen = getattr(sys, "frozen", False)
+
+    # Packaged standalone launch without CLI arguments
+    if is_frozen and len(sys.argv) == 1:
+        base_dir = os.path.dirname(sys.executable)
+        local_cfg = os.path.join(base_dir, "config.json")
+        if os.path.exists(local_cfg):
+            return local_cfg
+        return "config.json"
+
     if len(sys.argv) != 2:
         print("Usage error: Program requires exactly one argument.")
         print("Format: python3 pac-man.py <config_file.json>")

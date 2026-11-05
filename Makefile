@@ -23,7 +23,7 @@ test:
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	rm -rf __pycache__ .mypy_cache .pytest_cache build dist *.spec
+	rm -rf __pycache__ .mypy_cache .pytest_cache build dist
 
 lint:
 	flake8 .
