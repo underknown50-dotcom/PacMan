@@ -176,6 +176,9 @@ class ConfigLoader:
         cls, data: Dict[str, Any], defaults: GameConfig
     ) -> GameConfig:
         """Parse dictionary values and clamp them to safe ranges."""
+        # Normalize all keys to lowercase and stripped for case-insensitivity
+        data = {str(k).lower().strip(): v for k, v in data.items()}
+
         highscore_filename = defaults.highscore_filename
         raw_hs = data.get("highscore_filename") or data.get("highscore")
         if raw_hs is not None:
@@ -254,8 +257,11 @@ class ConfigLoader:
         if isinstance(raw_levels, list):
             for idx, lvl_obj in enumerate(raw_levels, start=1):
                 if isinstance(lvl_obj, dict):
+                    lvl = {
+                        str(k).lower().strip(): v for k, v in lvl_obj.items()
+                    }
                     w = cls._clamp_int(
-                        lvl_obj.get("width"),
+                        lvl.get("width"),
                         15,
                         cls.MIN_DIM,
                         cls.MAX_DIM,
@@ -265,7 +271,7 @@ class ConfigLoader:
                     if w % 2 == 0:
                         w += 1
                     h = cls._clamp_int(
-                        lvl_obj.get("height"),
+                        lvl.get("height"),
                         15,
                         cls.MIN_DIM,
                         cls.MAX_DIM,
@@ -274,7 +280,7 @@ class ConfigLoader:
                     if h % 2 == 0:
                         h += 1
                     t = cls._clamp_int(
-                        lvl_obj.get("max_time"),
+                        lvl.get("max_time") or lvl.get("time"),
                         level_max_time,
                         cls.MIN_TIME,
                         cls.MAX_TIME,

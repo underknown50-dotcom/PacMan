@@ -42,6 +42,27 @@ class TestConfigLoader(unittest.TestCase):
         self.assertIn('"lives": 5', cleaned)
         self.assertIn('"level#1"', cleaned)
 
+    def test_case_insensitive_keys(self) -> None:
+        """Verify uppercase and titlecase keys are recognized properly."""
+        with tempfile.NamedTemporaryFile(
+            "w", suffix=".json", delete=False
+        ) as f:
+            f.write(
+                '{"LIVES": 6, "Seed": 99, "Points_Per_Pacgum": 35, '
+                '"LEVELS": [{"Level": 1, "Width": 17, "Height": 17}]}'
+            )
+            path = f.name
+
+        try:
+            cfg = ConfigLoader.load(path)
+            self.assertEqual(cfg.lives, 6)
+            self.assertEqual(cfg.seed, 99)
+            self.assertEqual(cfg.points_per_pacgum, 35)
+            self.assertEqual(cfg.levels[0].width, 17)
+        finally:
+            if os.path.exists(path):
+                os.remove(path)
+
     def test_key_aliases(self) -> None:
         """Verify indicative aliases like 'pacgum' and 'time' are read."""
         with tempfile.NamedTemporaryFile(
