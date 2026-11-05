@@ -271,7 +271,7 @@
 
 - [x] **Teammate A & B (README.md):**
   - [x] Verify mandatory italicized first line:
-    `*This activity has been created as part of the 42 curriculum by <login1>, <login2>.*`
+    `*This activity has been created as part of the 42 curriculum by mewaysi, mal-jama.*`
   - [x] Write all mandatory sections: Description, Instructions, Resources (including detailed AI usage log), Configuration, Highscore, Maze Generation, Implementation, Architecture, Project Management link.
 - [x] **Peer-Review Simulation (Defense Practice):**
   - [x] Reinstall the external wheel from scratch into a clean virtual environment.

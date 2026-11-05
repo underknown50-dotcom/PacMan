@@ -1,6 +1,6 @@
 # 👥 Team Organization & Responsibility Matrix
 
-> **Team:** Team of Two  
+> **Team Members:** `mewaysi` & `mal-jama`  
 > **Project:** 42 Pac-Man
 
 ---
@@ -9,13 +9,13 @@
 
 | Area | Primary Owner | Secondary / Reviewer | Key Responsibilities |
 |---|:---:|:---:|---|
-| **Engine & Graphics** | Teammate A | Teammate B | Pygame window, Rendering pipeline, Tile drawing, UI Menus, HUD |
-| **Maze Adapter & Wheel** | Teammate B | Teammate A | External wheel integration (`mazegenerator`), data translation, grid format |
-| **Game Physics & Collision** | Teammate B | Teammate A | Pac-Man corridor movement, collision math, corner placement |
-| **Ghost AI & Behaviors** | Teammate B | Teammate A | State machine (`CHASE`, `FRIGHTENED`, `EATEN`), targeting logic, respawn |
-| **Config & Persistence** | Teammate A | Teammate B | Comment-aware JSON parser (`#`), default clamping, Highscore JSON |
-| **Cheat System** | Teammate B | Teammate A | Peer-review cheat keybindings (Invincibility, Level Skip, Freeze) |
-| **Packaging & Deployment**| Teammate A | Teammate B | PyInstaller standalone packaging, Itch.io upload & testing |
+| **Engine & Graphics** | `mewaysi` | `mal-jama` | Pygame window, Rendering pipeline, Tile drawing, UI Menus, HUD |
+| **Maze Adapter & Wheel** | `mal-jama` | `mewaysi` | External wheel integration (`mazegenerator`), data translation, grid format |
+| **Game Physics & Collision** | `mal-jama` | `mewaysi` | Pac-Man corridor movement, collision math, corner placement |
+| **Ghost AI & Behaviors** | `mal-jama` | `mewaysi` | State machine (`CHASE`, `FRIGHTENED`, `EATEN`), targeting logic, respawn |
+| **Config & Persistence** | `mewaysi` | `mal-jama` | Comment-aware JSON parser (`#`), default clamping, Highscore JSON |
+| **Cheat System** | `mal-jama` | `mewaysi` | Peer-review cheat keybindings (Invincibility, Level Skip, Freeze) |
+| **Packaging & Deployment**| `mewaysi` | `mal-jama` | PyInstaller standalone packaging, Itch.io upload & testing |
 | **Quality & Standards** | Both | Both | `flake8` compliance, `mypy` strict typing, PEP 257 docstrings |
 
 ---

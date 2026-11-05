@@ -1,4 +1,4 @@
-*This activity has been created as part of the 42 curriculum by hamoody, teammate2.*
+*This activity has been created as part of the 42 curriculum by mewaysi, mal-jama.*
 
 # 42 Pac-Man: Ghosts! More Ghosts!
 
