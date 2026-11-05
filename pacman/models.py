@@ -259,7 +259,12 @@ class Ghost:
                 self.state = GhostState.CHASE
         elif self.state == GhostState.EATEN:
             self.respawn_timer -= dt
-            if self.respawn_timer <= 0:
+            at_spawn = (
+                self.grid_x == self.spawn_x and self.grid_y == self.spawn_y
+            )
+            if self.respawn_timer <= 0 or (
+                at_spawn and self.respawn_timer <= 3.0
+            ):
                 self.reset_position()
                 return
 

@@ -218,8 +218,8 @@ class Game:
             self.pacgums.remove(player_tile)
             self.score += self.config.points_per_pacgum
 
-            # Level victory when all pacgums are cleared
-            if not self.pacgums:
+            # Level victory when all dots are cleared
+            if not self.pacgums and not self.super_pacgums:
                 self._advance_level()
                 return
 
@@ -230,6 +230,11 @@ class Game:
             self.ghosts_eaten_combo = 0
             for ghost in self.ghosts:
                 ghost.trigger_frightened(8.0)
+
+            # Level victory when all dots are cleared
+            if not self.pacgums and not self.super_pacgums:
+                self._advance_level()
+                return
 
         # Update Ghosts
         for ghost in self.ghosts:
