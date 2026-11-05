@@ -1,0 +1,12 @@
+[flake8]
+exclude =
+    .venv,
+    venv,
+    __pycache__,
+    .mypy_cache,
+    build,
+    dist,
+    wheels
+max-line-length = 79
+show-source = True
+count = True
