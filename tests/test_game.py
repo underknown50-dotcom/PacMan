@@ -1,19 +1,26 @@
 """Unit tests covering Pac-Man configuration, highscores, and maze logic.
 
-Satisfies Chapter 3.3 test suite guideline.
+Satisfies Chapter 3.3 test suite guideline by testing edge cases:
+- Faulty/corrupted JSON configuration syntax.
+- Out-of-bounds parameters and comment stripping.
+- Highscore name sanitization and ranking.
+- Maze corridor accessibility and boundary checks.
+- Ghost targeting personalities (Blinky, Pinky, Clyde).
+- Game state progression and cheat mode toggles.
 """
 
 import os
 import tempfile
 import unittest
 from pacman.adapter import MazeAdapter
-from pacman.config import ConfigLoader
+from pacman.config import ConfigLoader, GameConfig
+from pacman.game import Game
 from pacman.highscores import HighscoreManager
 from pacman.models import Direction, Ghost, GhostState, GhostType, Player
 
 
 class TestConfigLoader(unittest.TestCase):
-    """Test defensive JSON loading and comment stripping."""
+    """Test defensive JSON loading, comment stripping, and edge cases."""
 
     def test_strip_comments(self) -> None:
         """Verify '#' comments and trailing comments are removed."""
@@ -56,6 +63,40 @@ class TestConfigLoader(unittest.TestCase):
             if os.path.exists(path):
                 os.remove(path)
 
+    def test_corrupt_json_syntax_fallback(self) -> None:
+        """Verify malformed JSON falls back gracefully without traceback."""
+        with tempfile.NamedTemporaryFile(
+            "w", suffix=".json", delete=False
+        ) as f:
+            f.write("{ this is completely broken json syntax !!! ")
+            path = f.name
+
+        try:
+            cfg = ConfigLoader.load(path)
+            self.assertEqual(cfg.lives, 3)
+            self.assertEqual(cfg.seed, 42)
+        finally:
+            if os.path.exists(path):
+                os.remove(path)
+
+    def test_unknown_keys_ignored(self) -> None:
+        """Verify unrecognized keys are ignored without error."""
+        with tempfile.NamedTemporaryFile(
+            "w", suffix=".json", delete=False
+        ) as f:
+            f.write(
+                '{"unknown_test_key_xyz": 12345, "lives": 4, "seed": 77}'
+            )
+            path = f.name
+
+        try:
+            cfg = ConfigLoader.load(path)
+            self.assertEqual(cfg.lives, 4)
+            self.assertEqual(cfg.seed, 77)
+        finally:
+            if os.path.exists(path):
+                os.remove(path)
+
 
 class TestHighscoreManager(unittest.TestCase):
     """Test highscore persistence, sanitization, and sorting."""
@@ -94,6 +135,14 @@ class TestHighscoreManager(unittest.TestCase):
         self.assertEqual(entries[0][1], 1400)
         self.assertEqual(entries[-1][1], 500)
 
+    def test_corrupt_highscore_recovery(self) -> None:
+        """Verify corrupt file does not crash and starts with clean list."""
+        with open(self.temp_file.name, "w", encoding="utf-8") as f:
+            f.write("corrupted non-json contents")
+
+        new_manager = HighscoreManager(self.temp_file.name)
+        self.assertEqual(len(new_manager.scores), 0)
+
 
 class TestMazeAdapter(unittest.TestCase):
     """Test maze adapter wrapping and fallback mechanics."""
@@ -126,8 +175,8 @@ class TestMazeAdapter(unittest.TestCase):
         self.assertFalse(adapter.can_move(0, 0, 0, -1))
 
 
-class TestEntities(unittest.TestCase):
-    """Test Player and Ghost entity behaviors."""
+class TestEntitiesAndAI(unittest.TestCase):
+    """Test Player and Ghost entity behaviors and AI targeting."""
 
     def test_player_invincibility_cheat(self) -> None:
         """Verify player invincibility toggle."""
@@ -143,6 +192,41 @@ class TestEntities(unittest.TestCase):
         ghost.trigger_frightened(8.0)
         self.assertEqual(ghost.state, GhostState.FRIGHTENED)
         self.assertEqual(ghost.direction, Direction.DOWN)
+
+    def test_ghost_targeting_blinky_pinky_clyde(self) -> None:
+        """Verify distinct targeting math for Blinky, Pinky, and Clyde."""
+        player = Player(10, 10, lives=3)
+        player.direction = Direction.RIGHT
+
+        # Blinky targets player tile directly
+        blinky = Ghost(GhostType.BLINKY, 1, 1, 1, 1)
+        bx, by = blinky._calculate_target(player, None)
+        self.assertEqual((bx, by), (10, 10))
+
+        # Pinky targets 4 tiles ahead of player direction
+        pinky = Ghost(GhostType.PINKY, 1, 1, 1, 1)
+        px, py = pinky._calculate_target(player, blinky)
+        self.assertEqual((px, py), (14, 10))
+
+        # Clyde targets player if distance > 8, retreats if <= 8
+        clyde = Ghost(GhostType.CLYDE, 1, 1, 1, 1)
+        cx, cy = clyde._calculate_target(player, blinky)
+        self.assertEqual((cx, cy), (10, 10))
+
+        # Move Clyde close (e.g. at 9, 10 -> distance 1 <= 8)
+        clyde.grid_x, clyde.grid_y = 9, 10
+        cx_close, cy_close = clyde._calculate_target(player, blinky)
+        cx_c, cy_c = cx_close, cy_close
+        self.assertEqual((cx_c, cy_c), (clyde.corner_x, clyde.corner_y))
+
+    def test_game_cheat_skip_level(self) -> None:
+        """Verify cheat level skip advances level correctly."""
+        cfg = GameConfig()
+        game = Game(cfg)
+        game.start_new_game()
+        self.assertEqual(game.current_level_idx, 0)
+        game.cheat_skip_level()
+        self.assertEqual(game.current_level_idx, 1)
 
 
 if __name__ == "__main__":
