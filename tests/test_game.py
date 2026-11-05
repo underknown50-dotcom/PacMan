@@ -50,6 +50,40 @@ class TestGameEngine(unittest.TestCase):
         self.assertTrue(self.game.player.is_invincible)
         self.assertIn("INVINCIBLE", self.game.active_cheats)
 
+    def test_cheat_freeze_ghosts(self) -> None:
+        """Verify ghost freeze cheat halts ghost movement."""
+        self.game.start_new_game()
+        self.assertFalse(any(g.is_frozen for g in self.game.ghosts))
+        self.game.cheat_toggle_ghost_freeze()
+        self.assertTrue(all(g.is_frozen for g in self.game.ghosts))
+        self.assertIn("FREEZE", self.game.active_cheats)
+        self.game.cheat_toggle_ghost_freeze()
+        self.assertFalse(any(g.is_frozen for g in self.game.ghosts))
+
+    def test_cheat_add_life(self) -> None:
+        """Verify extra life cheat increments player lives."""
+        self.game.start_new_game()
+        initial_lives = self.game.player.lives
+        self.game.cheat_add_life()
+        self.assertEqual(self.game.player.lives, initial_lives + 1)
+
+    def test_cheat_speed_boost(self) -> None:
+        """Verify speed boost cheat multiplies player speed."""
+        self.game.start_new_game()
+        self.assertFalse(self.game.player.speed_boost)
+        self.game.cheat_toggle_speed()
+        self.assertTrue(self.game.player.speed_boost)
+        self.assertIn("SPEED", self.game.active_cheats)
+        self.game.cheat_toggle_speed()
+        self.assertFalse(self.game.player.speed_boost)
+
+    def test_cheat_skip_to_victory(self) -> None:
+        """Verify skipping past final level triggers victory state."""
+        self.game.start_new_game()
+        for _ in range(10):
+            self.game.cheat_skip_level()
+        self.assertEqual(self.game.state, GameState.VICTORY)
+
 
 if __name__ == "__main__":
     unittest.main()
