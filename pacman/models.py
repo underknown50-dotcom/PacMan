@@ -278,34 +278,69 @@ class Ghost:
 
         move_dist = speed * dt
 
-        # When close to cell midpoint, calculate next turn direction
-        dist_to_center = math.hypot(
-            self.x - self.grid_x, self.y - self.grid_y
-        )
-        if dist_to_center < move_dist:
+        # Ensure ghost has a valid moving direction from current tile
+        if (
+            self.direction == Direction.NONE
+            or not maze.can_move(
+                self.grid_x,
+                self.grid_y,
+                self.direction.dx,
+                self.direction.dy,
+            )
+        ):
             self.x = float(self.grid_x)
             self.y = float(self.grid_y)
-            self._choose_next_direction(player, blinky, maze)
+            self._choose_next_direction(
+                player, blinky, maze, allow_reverse=True
+            )
+            if self.direction == Direction.NONE:
+                return
 
-        # Advance along direction
-        if self.direction != Direction.NONE:
-            if maze.can_move(
-                self.grid_x, self.grid_y, self.direction.dx, self.direction.dy
-            ):
+        # Advance along current direction towards next tile center
+        while move_dist > 1e-6:
+            if self.direction == Direction.RIGHT:
+                target_coord = float(int(math.floor(self.x + 1e-7)) + 1)
+                dist = target_coord - self.x
+            elif self.direction == Direction.LEFT:
+                target_coord = float(int(math.ceil(self.x - 1e-7)) - 1)
+                dist = self.x - target_coord
+            elif self.direction == Direction.DOWN:
+                target_coord = float(int(math.floor(self.y + 1e-7)) + 1)
+                dist = target_coord - self.y
+            elif self.direction == Direction.UP:
+                target_coord = float(int(math.ceil(self.y - 1e-7)) - 1)
+                dist = self.y - target_coord
+            else:
+                break
+
+            if move_dist < dist:
                 self.x += self.direction.dx * move_dist
                 self.y += self.direction.dy * move_dist
-                self.grid_x = int(round(self.x))
-                self.grid_y = int(round(self.y))
+                move_dist = 0.0
             else:
+                move_dist -= dist
+                self.grid_x += self.direction.dx
+                self.grid_y += self.direction.dy
                 self.x = float(self.grid_x)
                 self.y = float(self.grid_y)
-                self._choose_next_direction(player, blinky, maze)
+
+                self._choose_next_direction(
+                    player, blinky, maze, allow_reverse=False
+                )
+                if not maze.can_move(
+                    self.grid_x,
+                    self.grid_y,
+                    self.direction.dx,
+                    self.direction.dy,
+                ):
+                    break
 
     def _choose_next_direction(
         self,
         player: Player,
         blinky: Optional["Ghost"],
         maze: MazeAdapter,
+        allow_reverse: bool = False,
     ) -> None:
         """Select the next corridor direction at intersections."""
         valid_dirs: List[Direction] = []
@@ -317,8 +352,12 @@ class Ghost:
         ]
 
         for d in all_dirs:
-            # Ghosts cannot immediately reverse unless forced
-            if d == self.direction.opposite() and len(all_dirs) > 1:
+            # Ghosts cannot immediately reverse unless forced or allowed
+            if (
+                not allow_reverse
+                and self.direction != Direction.NONE
+                and d == self.direction.opposite()
+            ):
                 continue
             if maze.can_move(self.grid_x, self.grid_y, d.dx, d.dy):
                 valid_dirs.append(d)
@@ -328,6 +367,8 @@ class Ghost:
             rev = self.direction.opposite()
             if maze.can_move(self.grid_x, self.grid_y, rev.dx, rev.dy):
                 self.direction = rev
+            else:
+                self.direction = Direction.NONE
             return
 
         if self.state == GhostState.FRIGHTENED:

@@ -1,6 +1,7 @@
 """Unit tests covering Pac-Man entity physics and Ghost AI targeting."""
 
 import unittest
+from pacman.adapter import MazeAdapter
 from pacman.models import Direction, Ghost, GhostState, GhostType, Player
 
 
@@ -64,6 +65,20 @@ class TestEntitiesAndAI(unittest.TestCase):
         self.assertEqual(ghost.frightened_speed, 2.4)
         self.assertEqual(ghost.eaten_speed, 7.0)
         self.assertGreater(player.speed, ghost.base_speed)
+
+    def test_ghost_movement_no_trapping(self) -> None:
+        """Verify ghosts traverse corridors smoothly without trapping."""
+        adapter = MazeAdapter(width=15, height=15, seed=1)
+        adapter.generate()
+        player = Player(7, 7, lives=3)
+        ghost = Ghost(GhostType.BLINKY, 0, 0, 0, 0)
+        dt = 1.0 / 60.0
+        visited = set()
+        for _ in range(300):
+            ghost.update(dt, player, None, adapter)
+            visited.add((ghost.grid_x, ghost.grid_y))
+        # In 5 seconds at 3.8 tiles/s, ghost should visit multiple tiles
+        self.assertGreater(len(visited), 5)
 
 
 if __name__ == "__main__":
