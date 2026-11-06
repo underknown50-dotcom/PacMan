@@ -1,0 +1,76 @@
+{
+  "policy": "Real passage traversal, greedy nearest-collectible BFS route; ghosts frozen and player invincible; timer unchanged; later mazes random. Pacing baseline, not human difficulty validation.",
+  "levels": [
+    {
+      "level": 1,
+      "collectibles": 241,
+      "limit_seconds": 90.0,
+      "clear_seconds": 79.0,
+      "outcome": "transition"
+    },
+    {
+      "level": 2,
+      "collectibles": 241,
+      "limit_seconds": 90.0,
+      "clear_seconds": 78.0,
+      "outcome": "transition"
+    },
+    {
+      "level": 3,
+      "collectibles": 268,
+      "limit_seconds": 105.0,
+      "clear_seconds": 86.2,
+      "outcome": "transition"
+    },
+    {
+      "level": 4,
+      "collectibles": 302,
+      "limit_seconds": 120.0,
+      "clear_seconds": 100.8,
+      "outcome": "transition"
+    },
+    {
+      "level": 5,
+      "collectibles": 302,
+      "limit_seconds": 120.0,
+      "clear_seconds": 98.2,
+      "outcome": "transition"
+    },
+    {
+      "level": 6,
+      "collectibles": 332,
+      "limit_seconds": 135.0,
+      "clear_seconds": 107.4,
+      "outcome": "transition"
+    },
+    {
+      "level": 7,
+      "collectibles": 369,
+      "limit_seconds": 150.0,
+      "clear_seconds": 115.4,
+      "outcome": "transition"
+    },
+    {
+      "level": 8,
+      "collectibles": 403,
+      "limit_seconds": 165.0,
+      "clear_seconds": 126.8,
+      "outcome": "transition"
+    },
+    {
+      "level": 9,
+      "collectibles": 443,
+      "limit_seconds": 180.0,
+      "clear_seconds": 150.2,
+      "outcome": "transition"
+    },
+    {
+      "level": 10,
+      "collectibles": 480,
+      "limit_seconds": 200.0,
+      "clear_seconds": 151.8,
+      "outcome": "victory"
+    }
+  ],
+  "final_state": "victory"
+}

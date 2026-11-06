@@ -1,470 +1,427 @@
-"""Entity models and AI state machines for Pac-Man.
+"""Deterministic, graphics-independent actors, rules and run state."""
 
-Includes:
-- Direction vector representations and helpers.
-- Player (Pac-Man) entity with buffered input and corridor movement.
-- Ghost entity hierarchy with classic arcade targeting behaviors:
-  * Blinky (Red): Direct chaser.
-  * Pinky (Pink): Ambush predictor (4 tiles ahead).
-  * Inky (Cyan): Flanker (vector reflection with Blinky).
-  * Clyde (Orange): Distance-based coward (retreats when within 8 tiles).
-- Frightened and Eaten ghost states, timers, and pathfinding.
-"""
+from __future__ import annotations
 
+from dataclasses import dataclass
+from enum import Enum
 import math
 import random
-from collections import deque
-from enum import Enum, auto
-from typing import Deque, List, Optional, Set, Tuple
-from pacman.adapter import MazeAdapter
+
+from pacman.cheats import Cheats
+from pacman.configuration import GameConfig
+from pacman.ghost_ai import calculate_ghost_target, choose_step
+from pacman.maze_adapter import Cell, Direction, Maze
 
 
-class Direction(Enum):
-    """Corridor movement directions with (dx, dy) coordinate deltas."""
+class State(str, Enum):
+    """Represent the run lifecycle without coupling it to menu rendering."""
 
-    NONE = (0, 0)
-    UP = (0, -1)
-    RIGHT = (1, 0)
-    DOWN = (0, 1)
-    LEFT = (-1, 0)
-
-    @property
-    def dx(self) -> int:
-        """Horizontal step delta."""
-        return self.value[0]
-
-    @property
-    def dy(self) -> int:
-        """Vertical step delta."""
-        return self.value[1]
-
-    def opposite(self) -> "Direction":
-        """Return the opposite direction."""
-        if self == Direction.UP:
-            return Direction.DOWN
-        if self == Direction.DOWN:
-            return Direction.UP
-        if self == Direction.LEFT:
-            return Direction.RIGHT
-        if self == Direction.RIGHT:
-            return Direction.LEFT
-        return Direction.NONE
+    MENU = "menu"
+    PLAYING = "playing"
+    PAUSED = "paused"
+    TRANSITION = "transition"
+    GAME_OVER = "game_over"
+    VICTORY = "victory"
 
 
-class GhostState(Enum):
-    """Operational states for ghost AI."""
+@dataclass
+class Actor:
+    """Travel along one validated graph edge with fractional progress."""
 
-    CHASE = auto()
-    SCATTER = auto()
-    FRIGHTENED = auto()
-    EATEN = auto()
+    cell: Cell
+    target: Cell | None = None
+    progress: float = 0.0
+    direction: Direction | None = None
 
-
-class GhostType(Enum):
-    """The four classic ghost personalities."""
-
-    BLINKY = "Blinky"  # Red
-    PINKY = "Pinky"    # Pink
-    INKY = "Inky"      # Cyan
-    CLYDE = "Clyde"    # Orange
-
-
-class Player:
-    """Represents Pac-Man, tracking lives, position, and buffered input."""
-
-    def __init__(self, start_x: int, start_y: int, lives: int = 3) -> None:
-        """Initialize Pac-Man at the specified grid coordinate."""
-        self.spawn_x = start_x
-        self.spawn_y = start_y
-        self.x = float(start_x)
-        self.y = float(start_y)
-        self.grid_x = start_x
-        self.grid_y = start_y
-        self.direction = Direction.NONE
-        self.next_direction = Direction.NONE
-        self.lives = lives
-        self.speed = 4.5  # Tiles per second
-        self.is_invincible = False
-        self.speed_boost = False
-
-    def reset_position(self) -> None:
-        """Reset Pac-Man back to the center spawn position."""
-        self.grid_x = self.spawn_x
-        self.grid_y = self.spawn_y
-        self.x = float(self.spawn_x)
-        self.y = float(self.spawn_y)
-        self.direction = Direction.NONE
-        self.next_direction = Direction.NONE
-
-    def queue_direction(self, direction: Direction) -> None:
-        """Buffer a desired turn direction."""
-        self.next_direction = direction
-
-    def update(self, dt: float, maze: MazeAdapter) -> None:
-        """Update position along corridors, respecting walls."""
-        effective_speed = (
-            self.speed * 1.6 if self.speed_boost else self.speed
+    def position(self) -> tuple[float, float]:
+        """Return a continuous cell-center position for drawing/collisions."""
+        if self.target is None:
+            return float(self.cell[0]), float(self.cell[1])
+        return (
+            self.cell[0] + (self.target[0] - self.cell[0]) * self.progress,
+            self.cell[1] + (self.target[1] - self.cell[1]) * self.progress,
         )
-        move_dist = effective_speed * dt
 
-        # Check if 180-degree immediate reversal is requested
-        if (
-            self.next_direction != Direction.NONE
-            and self.next_direction == self.direction.opposite()
-        ):
-            self.direction = self.next_direction
-            self.next_direction = Direction.NONE
-
-        # Attempt to make queued turn if aligned near grid center
-        dist_to_center = math.hypot(
-            self.x - self.grid_x, self.y - self.grid_y
-        )
-        if dist_to_center < 0.15 and self.next_direction != Direction.NONE:
-            if maze.can_move(
-                self.grid_x,
-                self.grid_y,
-                self.next_direction.dx,
-                self.next_direction.dy,
-            ):
-                self.x = float(self.grid_x)
-                self.y = float(self.grid_y)
-                self.direction = self.next_direction
-                self.next_direction = Direction.NONE
-
-        # Advance along current direction
-        if self.direction != Direction.NONE:
-            # Check if moving towards a wall
-            can_advance = maze.can_move(
-                self.grid_x, self.grid_y, self.direction.dx, self.direction.dy
-            )
-
-            target_x = self.x + self.direction.dx * move_dist
-            target_y = self.y + self.direction.dy * move_dist
-
-            if can_advance:
-                self.x = target_x
-                self.y = target_y
-                # Discrete grid coordinate when crossing midpoint
-                self.grid_x = int(round(self.x))
-                self.grid_y = int(round(self.y))
-            else:
-                # Clamp to cell center when hitting wall
-                if self.direction in (Direction.LEFT, Direction.RIGHT):
-                    if (
-                        self.direction == Direction.RIGHT
-                        and target_x > self.grid_x
-                    ) or (
-                        self.direction == Direction.LEFT
-                        and target_x < self.grid_x
-                    ):
-                        self.x = float(self.grid_x)
-                        self.direction = Direction.NONE
-                    else:
-                        self.x = target_x
-                elif self.direction in (Direction.UP, Direction.DOWN):
-                    if (
-                        self.direction == Direction.DOWN
-                        and target_y > self.grid_y
-                    ) or (
-                        self.direction == Direction.UP
-                        and target_y < self.grid_y
-                    ):
-                        self.y = float(self.grid_y)
-                        self.direction = Direction.NONE
-                    else:
-                        self.y = target_y
+    def reset(self, cell: Cell) -> None:
+        """Place an actor safely at a cell without retaining a partial edge."""
+        self.cell = cell
+        self.target = None
+        self.progress = 0.0
+        self.direction = None
 
 
-class Ghost:
-    """Ghost entity featuring authentic arcade AI pathfinding."""
+@dataclass
+class Ghost(Actor):
+    """Track a home corner, returning eyes and the full respawn cooldown."""
 
-    COLORS = {
-        GhostType.BLINKY: (255, 0, 0),       # Red
-        GhostType.PINKY: (255, 184, 255),    # Pink
-        GhostType.INKY: (0, 255, 255),       # Cyan
-        GhostType.CLYDE: (255, 184, 82),     # Orange
-    }
+    home: Cell = (0, 0)
+    previous: Cell | None = None
+    active: bool = True
+    respawn_left: float = 0.0
+    returning: bool = False
+    return_speed: float = 0.0
+    personality: int = 0
 
-    def __init__(
-        self,
-        ghost_type: GhostType,
-        spawn_x: int,
-        spawn_y: int,
-        corner_x: int,
-        corner_y: int,
-    ) -> None:
-        """Initialize the ghost with personality and assigned corner."""
-        self.ghost_type = ghost_type
-        self.spawn_x = spawn_x
-        self.spawn_y = spawn_y
-        self.corner_x = corner_x
-        self.corner_y = corner_y
 
-        self.x = float(spawn_x)
-        self.y = float(spawn_y)
-        self.grid_x = spawn_x
-        self.grid_y = spawn_y
+class Game:
+    """Own a complete run, using fixed simulation steps of 1/120 second."""
 
-        self.direction = Direction.UP
-        self.state = GhostState.CHASE
-        self.base_speed = 3.8
-        self.eaten_speed = 7.0
-        self.frightened_speed = 2.4
+    STEP = 1.0 / 120.0
 
-        self.frightened_timer = 0.0
-        self.frightened_duration = 8.0
-        self.respawn_timer = 0.0
-        self.is_frozen = False
+    def __init__(self, config: GameConfig) -> None:
+        """Prepare a menu-state model; generation waits until Start Game."""
+        self.config = config
+        self.state = State.MENU
+        self.rng = random.Random()
+        self.cheats = Cheats()
+        self.maze: Maze
+        self.player = Actor((0, 0))
+        self.ghosts: list[Ghost] = []
+        self._home_distances: dict[Cell, dict[Cell, int]] = {}
+        self.pellets: set[Cell] = set()
+        self.powers: set[Cell] = set()
+        self.score = 0
+        self.lives = config.lives
+        self.level_index = 0
+        self.time_left = 0.0
+        self.power_left = 0.0
+        self.invulnerable_left = 0.0
+        self.boost_left = 0.0
+        self.transition_left = 0.0
+        self.reason = ""
+        self.desired: Direction | None = None
+        self._accumulator = 0.0
 
-    def reset_position(self) -> None:
-        """Reset ghost to its corner spawn position."""
-        self.grid_x = self.spawn_x
-        self.grid_y = self.spawn_y
-        self.x = float(self.spawn_x)
-        self.y = float(self.spawn_y)
-        self.direction = Direction.UP
-        self.state = GhostState.CHASE
-        self.frightened_timer = 0.0
-        self.respawn_timer = 0.0
+    def start(self) -> None:
+        """Reset every run-specific value and build the fixed-seed level."""
+        self.score = 0
+        self.lives = self.config.lives
+        self.level_index = 0
+        self.cheats = Cheats()
+        self.reason = ""
+        self._accumulator = 0.0
+        self._load_level()
 
-    def trigger_frightened(self, duration: float = 8.0) -> None:
-        """Enter frightened (edible) mode when Pac-Man eats super-pacgum."""
-        if self.state != GhostState.EATEN:
-            self.state = GhostState.FRIGHTENED
-            self.frightened_duration = duration
-            self.frightened_timer = duration
-            # Classic behavior: reverse direction on frightened trigger
-            self.direction = self.direction.opposite()
+    def _load_level(self) -> None:
+        """Adapt the assigned generator, reserve starts and fill corridors."""
+        settings = self.config.levels[self.level_index]
+        seed = self.config.seed if self.level_index == 0 else 0
+        self.maze = Maze.generate(settings.width, settings.height, seed)
+        self.player = Actor(self.maze.spawn)
+        self.ghosts = [
+            Ghost(cell=cell, home=cell, personality=index)
+            for index, cell in enumerate(self.maze.ghost_spawns)
+        ]
+        self._home_distances = {
+            ghost.home: self.maze.distances(ghost.home)
+            for ghost in self.ghosts
+        }
+        self.powers = set(self.maze.power_cells)
+        reserved = {self.maze.spawn, *self.maze.ghost_spawns, *self.powers}
+        eligible = sorted(self.maze.reachable - reserved)
+        target = max(self.config.pacgum,
+                     math.ceil(len(eligible) * self.config.pellet_coverage))
+        # A local RNG makes collectible layout reproducible too; AI owns a
+        # separate RNG that the generator's module-global seed cannot reset.
+        placement = random.Random(seed if seed else self.rng.getrandbits(64))
+        self.pellets = set(placement.sample(
+            eligible, min(len(eligible), target),
+        ))
+        self.time_left = settings.level_max_time
+        self.power_left = 0.0
+        self.invulnerable_left = 2.0
+        self.boost_left = 0.0
+        self.transition_left = 0.0
+        self.desired = None
+        self.state = State.PLAYING
 
-    def mark_eaten(self) -> None:
-        """Transition to eaten state when touched by Pac-Man in edible mode."""
-        self.state = GhostState.EATEN
-        self.frightened_timer = 0.0
-        self.respawn_timer = 6.0
-
-    def update(
-        self,
-        dt: float,
-        player: Player,
-        blinky: Optional["Ghost"],
-        maze: MazeAdapter,
-    ) -> None:
-        """Update ghost movement, targeting, and state timers."""
-        if self.is_frozen:
+    def set_direction(self, direction: Direction) -> None:
+        """Buffer an intersection turn or reverse along the current edge."""
+        if self.state != State.PLAYING:
             return
+        self.desired = direction
+        actor = self.player
+        if actor.target is not None and actor.direction is not None:
+            dx, dy = actor.direction.delta
+            if direction.delta == (-dx, -dy):
+                actor.cell, actor.target = actor.target, actor.cell
+                actor.progress = 1.0 - actor.progress
+                actor.direction = direction
 
-        # Handle timers
-        if self.state == GhostState.FRIGHTENED:
-            self.frightened_timer -= dt
-            if self.frightened_timer <= 0:
-                self.state = GhostState.CHASE
-        elif self.state == GhostState.EATEN:
-            self.respawn_timer -= dt
-            at_spawn = (
-                self.grid_x == self.spawn_x and self.grid_y == self.spawn_y
-            )
-            if self.respawn_timer <= 0 or (
-                at_spawn and self.respawn_timer <= 3.0
-            ):
-                self.reset_position()
-                return
+    def pause(self) -> None:
+        """Pause or resume without changing simulation time."""
+        if self.state == State.PLAYING:
+            self.state = State.PAUSED
+        elif self.state == State.PAUSED:
+            self.state = State.PLAYING
 
-        # Determine current movement speed
-        if self.state == GhostState.EATEN:
-            speed = self.eaten_speed
-        elif self.state == GhostState.FRIGHTENED:
-            speed = self.frightened_speed
-        else:
-            speed = self.base_speed
+    def return_to_menu(self) -> None:
+        """Discard an unfinished run without recording a score."""
+        self.state = State.MENU
+        self._accumulator = 0.0
 
-        move_dist = speed * dt
-
-        # Ensure ghost has a valid moving direction from current tile
-        if (
-            self.direction == Direction.NONE
-            or not maze.can_move(
-                self.grid_x,
-                self.grid_y,
-                self.direction.dx,
-                self.direction.dy,
-            )
-        ):
-            self.x = float(self.grid_x)
-            self.y = float(self.grid_y)
-            self._choose_next_direction(
-                player, blinky, maze, allow_reverse=True
-            )
-            if self.direction == Direction.NONE:
-                return
-
-        # Move along current direction towards next tile center
-        while move_dist > 1e-6:
-            target_x = self.grid_x + self.direction.dx
-            target_y = self.grid_y + self.direction.dy
-
-            if self.direction.dx != 0:
-                dist = abs(float(target_x) - self.x)
+    def update(self, elapsed: float) -> None:
+        """Advance finite elapsed time and freeze every timer on pause."""
+        if (self.state not in {State.PLAYING, State.TRANSITION}
+                or not math.isfinite(elapsed) or elapsed <= 0):
+            return
+        self._accumulator += elapsed
+        while self._accumulator + 1e-12 >= self.STEP:
+            self._accumulator -= self.STEP
+            if self.state == State.TRANSITION:
+                self.transition_left -= self.STEP
+                if self.transition_left <= 1e-9:
+                    self.level_index += 1
+                    self._load_level()
+            elif self.state == State.PLAYING:
+                self._step(self.STEP)
             else:
-                dist = abs(float(target_y) - self.y)
+                self._accumulator = 0.0
+                break
 
-            if move_dist < dist:
-                self.x += self.direction.dx * move_dist
-                self.y += self.direction.dy * move_dist
-                move_dist = 0.0
-            else:
-                move_dist -= dist
-                self.grid_x = target_x
-                self.grid_y = target_y
-                self.x = float(self.grid_x)
-                self.y = float(self.grid_y)
+    def _step(self, dt: float) -> None:
+        """Update timers, actors, collections and collisions in safe order."""
+        self.time_left = max(0.0, self.time_left - dt)
+        if self.time_left <= 1e-9:
+            self.finish_loss("Time ran out")
+            return
+        self.power_left = max(0.0, self.power_left - dt)
+        self.invulnerable_left = max(0.0, self.invulnerable_left - dt)
+        self.boost_left = max(0.0, self.boost_left - dt)
+        speed = self.config.player_speed * (1.75 if self.boost_left else 1)
+        self._move_player(speed * dt)
+        if self.state != State.PLAYING:
+            return
+        for ghost in self.ghosts:
+            if not ghost.active:
+                self._update_inactive_ghost(ghost, dt)
+                continue
+            if not self.cheats.frozen:
+                difficulty = min(1.35, 1.0 + self.level_index * 0.035)
+                frightened = 0.70 if self.power_left > 0 else 1.0
+                self._move_ghost(ghost, self.config.ghost_speed * dt
+                                 * difficulty * frightened)
+        self._collisions()
 
-                self._choose_next_direction(
-                    player, blinky, maze, allow_reverse=False
-                )
-                if not maze.can_move(
-                    self.grid_x,
-                    self.grid_y,
-                    self.direction.dx,
-                    self.direction.dy,
-                ):
+    def _move_player(self, distance: float) -> None:
+        """Spend movement distance only on reciprocal, validated open edges."""
+        actor = self.player
+        while distance > 1e-10:
+            if actor.target is None:
+                if self.desired is not None:
+                    target = self.maze.step(actor.cell, self.desired)
+                    if target is not None:
+                        actor.direction = self.desired
+                if actor.direction is None:
+                    self._collect()
+                    break
+                actor.target = self.maze.step(actor.cell, actor.direction)
+                if actor.target is None:
+                    self._collect()
+                    break
+            used = min(distance, 1.0 - actor.progress)
+            actor.progress += used
+            distance -= used
+            if actor.progress >= 1.0 - 1e-10:
+                actor.cell = actor.target
+                actor.target = None
+                actor.progress = 0.0
+                self._collect()
+                if self.state != State.PLAYING:
                     break
 
-    def _choose_next_direction(
-        self,
-        player: Player,
-        blinky: Optional["Ghost"],
-        maze: MazeAdapter,
-        allow_reverse: bool = False,
-    ) -> None:
-        """Select the next corridor direction at intersections."""
-        valid_dirs: List[Direction] = []
-        all_dirs = [
-            Direction.UP,
-            Direction.LEFT,
-            Direction.DOWN,
-            Direction.RIGHT,
-        ]
+    def _move_ghost(self, ghost: Ghost, distance: float) -> None:
+        """Choose a chase/flee neighbor whenever a ghost reaches a junction."""
+        while distance > 1e-10:
+            if ghost.target is None:
+                frightened = self.power_left > 0
+                if frightened:
+                    target = self.player.cell
+                else:
+                    blinky = (self.ghosts[0].cell if self.ghosts
+                              else self.player.cell)
+                    target = calculate_ghost_target(
+                        ghost.personality, ghost.cell, ghost.home,
+                        self.player.cell, self.player.direction,
+                        blinky, self.maze,
+                    )
+                ghost.target = choose_step(
+                    self.maze, ghost.cell, target, ghost.previous,
+                    frightened, self.rng,
+                )
+                if ghost.target == ghost.cell:
+                    ghost.target = None
+                    break
+                delta = (ghost.target[0] - ghost.cell[0],
+                         ghost.target[1] - ghost.cell[1])
+                ghost.direction = next(
+                    d for d in Direction if d.delta == delta
+                )
+            used = min(distance, 1.0 - ghost.progress)
+            ghost.progress += used
+            distance -= used
+            if ghost.progress >= 1.0 - 1e-10:
+                ghost.previous = ghost.cell
+                ghost.cell = ghost.target
+                ghost.target = None
+                ghost.progress = 0.0
 
-        for d in all_dirs:
-            # Ghosts cannot immediately reverse unless forced or allowed
-            if (
-                not allow_reverse
-                and self.direction != Direction.NONE
-                and d == self.direction.opposite()
-            ):
+    def _eat_ghost(self, ghost: Ghost) -> None:
+        """Send harmless eyes home continuously, awarding this capture once."""
+        if not ghost.active:
+            return
+        distances = self._home_distances[ghost.home]
+        remaining = float(distances[ghost.cell])
+        if ghost.target is not None:
+            forward = 1.0 - ghost.progress + distances[ghost.target]
+            backward = ghost.progress + distances[ghost.cell]
+            if backward < forward:
+                ghost.cell, ghost.target = ghost.target, ghost.cell
+                ghost.progress = 1.0 - ghost.progress
+            remaining = min(forward, backward)
+            delta = (ghost.target[0] - ghost.cell[0],
+                     ghost.target[1] - ghost.cell[1])
+            ghost.direction = next(d for d in Direction if d.delta == delta)
+        ghost.active = False
+        ghost.previous = None
+        ghost.respawn_left = self.config.ghost_respawn_delay
+        ghost.returning = remaining > 1e-10
+        # Adapt harmless eye travel to the route so even large mazes retain
+        # the configured cooldown, leaving time to wait visibly at home.
+        travel_budget = max(0.1, self.config.ghost_respawn_delay - 0.75)
+        ghost.return_speed = max(6.0, remaining / travel_budget)
+        if not ghost.returning:
+            ghost.reset(ghost.home)
+            ghost.return_speed = 0.0
+        self.score += self.config.points_per_ghost
+
+    def _move_returning_ghost(self, ghost: Ghost, distance: float) -> None:
+        """Follow shortest legal passages to this ghost's assigned home."""
+        distances = self._home_distances[ghost.home]
+        while ghost.returning:
+            if ghost.target is None:
+                if ghost.cell == ghost.home:
+                    ghost.returning = False
+                    ghost.return_speed = 0.0
+                    break
+                ghost.target = min(self.maze.neighbors(ghost.cell),
+                                   key=lambda cell: (distances[cell], cell))
+                delta = (ghost.target[0] - ghost.cell[0],
+                         ghost.target[1] - ghost.cell[1])
+                ghost.direction = next(
+                    d for d in Direction if d.delta == delta
+                )
+            if distance <= 1e-10:
+                break
+            used = min(distance, 1.0 - ghost.progress)
+            ghost.progress += used
+            distance -= used
+            if ghost.progress >= 1.0 - 1e-10:
+                ghost.cell = ghost.target
+                ghost.target = None
+                ghost.progress = 0.0
+
+    def _update_inactive_ghost(self, ghost: Ghost, dt: float) -> None:
+        """Restore a body only after both home arrival and cooldown expiry."""
+        ghost.respawn_left = max(0.0, ghost.respawn_left - dt)
+        if ghost.returning and not self.cheats.frozen:
+            self._move_returning_ghost(ghost, ghost.return_speed * dt)
+        if not ghost.returning and ghost.respawn_left <= 1e-9:
+            ghost.reset(ghost.home)
+            ghost.previous = None
+            ghost.active = True
+            ghost.return_speed = 0.0
+
+    def _collect(self) -> None:
+        """Consume each item once; require both normal and power pellets."""
+        cell = self.player.cell
+        if cell in self.pellets:
+            self.pellets.remove(cell)
+            self.score += self.config.points_per_pacgum
+        if cell in self.powers:
+            self.powers.remove(cell)
+            self.score += self.config.points_per_super_pacgum
+            self.power_left = self.config.power_duration
+        if not self.pellets and not self.powers:
+            self.complete_level()
+
+    def _collisions(self) -> None:
+        """Resolve continuous contacts once, including edge crossings."""
+        px, py = self.player.position()
+        for ghost in self.ghosts:
+            if not ghost.active:
                 continue
-            if maze.can_move(self.grid_x, self.grid_y, d.dx, d.dy):
-                valid_dirs.append(d)
+            gx, gy = ghost.position()
+            if (px - gx) ** 2 + (py - gy) ** 2 > 0.56 ** 2:
+                continue
+            if self.power_left > 0:
+                self._eat_ghost(ghost)
+            elif (self.invulnerable_left <= 0
+                  and not self.cheats.invincible):
+                self.lose_life()
+                break
 
-        if not valid_dirs:
-            # Dead-end reversal
-            rev = self.direction.opposite()
-            if maze.can_move(self.grid_x, self.grid_y, rev.dx, rev.dy):
-                self.direction = rev
-            else:
-                self.direction = Direction.NONE
+    def lose_life(self) -> None:
+        """Remove one life and reset actors, preserving score/items/time."""
+        if self.state != State.PLAYING:
             return
-
-        if self.state == GhostState.FRIGHTENED:
-            # Frightened mode: pick randomly among valid paths
-            self.direction = random.choice(valid_dirs)
+        self.lives = max(0, self.lives - 1)
+        if self.lives == 0:
+            self.finish_loss("No lives remaining")
             return
+        self.player.reset(self.maze.spawn)
+        self.desired = None
+        self.power_left = 0.0
+        self.invulnerable_left = 2.0
+        for ghost in self.ghosts:
+            if ghost.active:
+                ghost.reset(ghost.home)
+                ghost.previous = None
 
-        # Target calculation based on ghost personality
-        target_x, target_y = self._calculate_target(player, blinky)
-        self.direction = self._bfs_next_direction(
-            maze, target_x, target_y, valid_dirs
-        )
+    def complete_level(self) -> None:
+        """Announce completion, or win once the final configured level ends."""
+        if self.state != State.PLAYING:
+            return
+        if self.level_index + 1 == len(self.config.levels):
+            self.state = State.VICTORY
+            self.reason = "Every maze cleared. Congratulations!"
+        else:
+            self.state = State.TRANSITION
+            self.transition_left = 1.5
 
-    def _bfs_next_direction(
-        self,
-        maze: MazeAdapter,
-        target_x: int,
-        target_y: int,
-        valid_initial_dirs: List[Direction],
-    ) -> Direction:
-        """Find the corridor direction along the shortest path to target."""
-        if len(valid_initial_dirs) == 1:
-            return valid_initial_dirs[0]
+    def finish_loss(self, reason: str) -> None:
+        """Finish a live run with an explicit, player-readable loss reason."""
+        if self.state in {State.PLAYING, State.PAUSED}:
+            self.reason = reason
+            self.state = State.GAME_OVER
 
-        tx = max(0, min(maze.width - 1, target_x))
-        ty = max(0, min(maze.height - 1, target_y))
-
-        queue: Deque[Tuple[int, int, Direction]] = deque()
-        visited: Set[Tuple[int, int]] = {(self.grid_x, self.grid_y)}
-
-        for d in valid_initial_dirs:
-            nx, ny = self.grid_x + d.dx, self.grid_y + d.dy
-            if (nx, ny) == (tx, ty):
-                return d
-            visited.add((nx, ny))
-            queue.append((nx, ny, d))
-
-        all_dirs = [
-            Direction.UP,
-            Direction.LEFT,
-            Direction.DOWN,
-            Direction.RIGHT,
-        ]
-
-        while queue:
-            cx, cy, first_dir = queue.popleft()
-            for d in all_dirs:
-                if maze.can_move(cx, cy, d.dx, d.dy):
-                    nx, ny = cx + d.dx, cy + d.dy
-                    if (nx, ny) not in visited:
-                        if (nx, ny) == (tx, ty):
-                            return first_dir
-                        visited.add((nx, ny))
-                        queue.append((nx, ny, first_dir))
-
-        # Fallback to Euclidean heuristic if target unreachable
-        best_dir = valid_initial_dirs[0]
-        best_dist = float("inf")
-        for d in valid_initial_dirs:
-            nx, ny = self.grid_x + d.dx, self.grid_y + d.dy
-            dist = (nx - tx) ** 2 + (ny - ty) ** 2
-            if dist < best_dist:
-                best_dist = dist
-                best_dir = d
-        return best_dir
-
-    def _calculate_target(
-        self, player: Player, blinky: Optional["Ghost"]
-    ) -> Tuple[int, int]:
-        """Calculate target grid tile based on AI personality."""
-        if self.state == GhostState.EATEN:
-            # Return straight to assigned corner
-            return self.spawn_x, self.spawn_y
-
-        px, py = player.grid_x, player.grid_y
-        pdx, pdy = player.direction.dx, player.direction.dy
-
-        # 1. Blinky (Red): Direct aggressive chaser
-        if self.ghost_type == GhostType.BLINKY:
-            return px, py
-
-        # 2. Pinky (Pink): Ambush 4 tiles ahead of Pac-Man
-        if self.ghost_type == GhostType.PINKY:
-            return px + (4 * pdx), py + (4 * pdy)
-
-        # 3. Inky (Cyan): Flanking pinch maneuver with Blinky
-        if self.ghost_type == GhostType.INKY:
-            pivot_x = px + (2 * pdx)
-            pivot_y = py + (2 * pdy)
-            bx = blinky.grid_x if blinky else px
-            by = blinky.grid_y if blinky else py
-            # Vector reflection from Blinky through pivot tile
-            target_x = pivot_x + (pivot_x - bx)
-            target_y = pivot_y + (pivot_y - by)
-            return target_x, target_y
-
-        # 4. Clyde (Orange): Cowardly distance-based behavior
-        if self.ghost_type == GhostType.CLYDE:
-            dist = math.hypot(self.grid_x - px, self.grid_y - py)
-            if dist > 8.0:
-                return px, py
-            # Retreat to bottom-left corner when too close
-            return self.corner_x, self.corner_y
-
-        return px, py
+    def cheat(self, key: str) -> None:
+        """Apply documented review actions only inside an enabled live run."""
+        if key == "f1" and self.state == State.PLAYING:
+            self.cheats.toggle()
+            if not self.cheats.enabled:
+                self.boost_left = 0.0
+            return
+        if not self.cheats.enabled or self.state != State.PLAYING:
+            return
+        if key == "i":
+            self.cheats.invincible = not self.cheats.invincible
+        elif key == "g":
+            self.cheats.frozen = not self.cheats.frozen
+        elif key == "n":
+            self.complete_level()
+        elif key == "l":
+            self.lives = min(999, self.lives + 1)
+        elif key == "b":
+            self.boost_left = 10.0
+        elif key == "o":
+            self.power_left = self.config.power_duration
+        elif key == "t":
+            self.time_left = min(self.time_left, 1.0)
+        elif key == "k":
+            self.lose_life()
+        elif key == "c":
+            remaining = self.pellets | self.powers
+            keep = min(remaining) if remaining else None
+            self.pellets = {keep} if keep is not None else set()
+            self.powers.clear()

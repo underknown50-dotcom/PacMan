@@ -1,0 +1,84 @@
+PAC-MAN 42 — LINUX PLAYER GUIDE
+
+Launch
+  Extract the complete Pacman42-Linux folder, then run ./run.sh from it.
+  Keep the executable, _internal folder and configuration together.
+  No Python installation is needed for the packaged build.
+  Use a Linux x86_64 graphical desktop. The logical 1000 x 850 view scales
+  to fit the desktop, down to a 640 x 544 window.
+
+Play
+  Arrow keys or WASD move Pac-Man. Eat every small and large pellet to clear
+  each maze. Clear all ten levels to win. Four differently colored ghosts
+  chase you. A large corner pellet makes them blue and edible temporarily.
+  Flashing warns that the power is about to end. Eaten ghosts become harmless
+  eyes, follow corridors home and wait for their respawn cooldown to finish.
+
+  Defaults: 3 lives; global timer 180 seconds; small pellet 10 points; large pellet
+  50 points; edible ghost 200 points; power 8 seconds; ghost return 7 seconds.
+  Player speed is 5 cells/second; base ghost speed is 1.5 cells/second.
+  Ghost contact removes one life and respawns you near the middle. Your score,
+  collected items and countdown are retained. Protection lasts 2 seconds.
+  Running out of lives or time ends the run. The shipped ten level limits are
+  180, 180, 210, 240, 240, 270, 300, 330, 360 and 400 seconds, allowing more time
+  for the larger later mazes. A level can override the global timer in config.
+
+Menus
+  The main menu has an animated evening garden with gently moving foliage,
+  fireflies and pond ripples. This decoration does not advance gameplay.
+  Up/Down or W/S select; Enter or Space confirms.
+  Esc or P pauses during play. All gameplay timers freeze while paused.
+  Pause offers Resume and Return to Main Menu. Leaving asks for confirmation
+  and discards the unfinished run. Esc cancels that confirmation first.
+  Esc returns from Instructions/Highscores; Esc at the main menu exits.
+
+Save a completed run
+  At Victory or Game Over, type a name using up to 10 ASCII letters, digits
+  and spaces. Backspace deletes. Enter saves a nonblank name and returns to
+  the main menu. Esc explicitly saves as PLAYER. The best ten scores persist.
+  Victory has a golden garden and trophy; Game Over has a moonlit rainy garden.
+  Completed runs using review tools are eligible for the same leaderboard.
+
+Review tools
+  F1 enables/disables review mode during play; controls appear on screen.
+  I  Toggle immunity to ghost contact.
+  N  Complete the current level immediately.
+  G  Freeze/unfreeze ghosts and returning eyes; cooldowns still advance.
+     Frozen eyes remain harmless until they reach home after unfreezing.
+  L  Add one life.
+  B  Boost player speed by 1.75x for 10 gameplay seconds.
+  O  Activate/reset power.
+  C  Leave one ordinary pellet.
+  T  Set the countdown to at most one second.
+  K  Remove one life deliberately, including when immunity is enabled.
+  Disable F1 to clear immunity, movement freeze and speed boost.
+  Starting a fresh game resets all review state.
+
+Settings and scores
+  Edit the adjacent config.json and restart to apply settings.
+  The README documents every setting, safe ranges and comment support.
+  Default score file:
+    $XDG_DATA_HOME/forty-two-pacman/highscores.json
+  or, when XDG_DATA_HOME is absent/relative:
+    ~/.local/share/forty-two-pacman/highscores.json
+  Packaged builds keep score writes in user data even for relative filenames.
+  Score-file errors retain the leaderboard in memory and show a warning.
+
+Error diagnostics
+  Configuration, storage and runtime problems are recorded automatically in:
+    $XDG_DATA_HOME/forty-two-pacman/errors.log
+  or ~/.local/share/forty-two-pacman/errors.log when XDG is absent/relative.
+  The log uses UTC timestamps and keeps full exception details. It rotates
+  at 1 MiB with three backups; normal console messages remain brief.
+  A configuration at a log/backup path makes the log use an alternate name.
+  If logging cannot write, the menu/end screen shows a warning and the console
+  remains available. Scores still use their own file and save flow.
+
+Compatibility
+  The standalone build targets Linux x86_64 and a glibc compatible with the
+  build system. A newer build may not run on an older distribution; rebuild
+  there if needed. A graphical display is required for normal play.
+  The program does not require audio or network access during play.
+
+A 42 curriculum team project by mal-jama and mewaysi.
+See README.md for source, design and dependency information.

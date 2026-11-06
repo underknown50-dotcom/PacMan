@@ -1,0 +1,31 @@
+# Whole lines beginning with # are ignored, including indented comments.
+{
+  "highscore_filename": "@userdata/highscores.json",
+  # Ordinary JSON string values keep their # characters unchanged.
+  "reviewer_note": "Example # inside a quoted string",
+  "levels": [
+    {"width": 19, "height": 17},
+    {"width": 19, "height": 17},
+    {"width": 21, "height": 17, "level_max_time": 210},
+    {"width": 21, "height": 19, "level_max_time": 240},
+    {"width": 21, "height": 19, "level_max_time": 240},
+    {"width": 23, "height": 19, "level_max_time": 270},
+    {"width": 23, "height": 21, "level_max_time": 300},
+    {"width": 25, "height": 21, "level_max_time": 330},
+    {"width": 25, "height": 23, "level_max_time": 360},
+    {"width": 27, "height": 23, "level_max_time": 400}
+  ],
+  "lives": 3,
+  # Minimum normal pellet count; coverage still fills most corridors.
+  "pacgum": 42,
+  "points_per_pacgum": 10,
+  "points_per_super_pacgum": 50,
+  "points_per_ghost": 200,
+  "seed": 42,
+  "level_max_time": 180,
+  "power_duration": 8,
+  "ghost_respawn_delay": 7,
+  "player_speed": 5,
+  "ghost_speed": 1.5,
+  "pellet_coverage": 0.8
+}

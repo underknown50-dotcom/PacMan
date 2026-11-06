@@ -1,21 +1,38 @@
-# 📁 Project Management Directory
+# Project-management record
 
-This directory contains the project management documentation required by **Chapter 8** of the 42 Pac-Man subject.
+This directory contains the Pac-Man team's plan, decisions, risks and recorded
+verification results. **Team members: mal-jama and mewaysi.** Record dates
+identify when the checks or changes were recorded; they do not establish who
+originally authored a particular file.
 
----
+| Record | Purpose |
+| --- | --- |
+| [plan.md](plan.md) | Requirements, sequence, responsibilities and release gates |
+| [progress.md](progress.md) | Actual progress against that plan |
+| [decisions.md](decisions.md) | Design choices and alternatives considered |
+| [risks.md](risks.md) | Concrete risks, mitigations and remaining limits |
+| [acceptance_tests.md](acceptance_tests.md) | Repeatable checks and actual evidence |
+| [issues.md](issues.md) | Fixed integration issues and outstanding manual tasks |
+| [artifact_hashes.json](artifact_hashes.json) | Original supplied artifact SHA-256 values |
+| [pacing_check.json](pacing_check.json) | Actual ten-level route traversal with unchanged countdowns |
+| [screenshots/](screenshots/) | Actual rendered screens, including returning and waiting eyes |
+| [visual_logging_update.md](visual_logging_update.md) | Returning eyes, separate result gardens and persistent logging integration |
+| [finish_performance.json](finish_performance.json) | Measured cold/warm result-screen drawing at native/minimum sizes |
 
-## 📑 Documents Index
+## Team organization
 
-1. [**daily_plan.md**](file:///c:/Users/7moody/Desktop/pac-man/project_management/daily_plan.md): Day-by-day action plan, to-do checklists, and progress tracker for both teammates across the 14-day sprint.
-2. [**team_organization.md**](file:///c:/Users/7moody/Desktop/pac-man/project_management/team_organization.md): Division of responsibilities between teammates, decision-making protocols, and communication workflows.
-3. [**risk_analysis.md**](file:///c:/Users/7moody/Desktop/pac-man/project_management/risk_analysis.md): Identification of technical and schedule risks along with their mitigation plans.
-4. [**test_plan.md**](file:///c:/Users/7moody/Desktop/pac-man/project_management/test_plan.md): Acceptance test plan detailing features tested, edge cases, and bug tracking.
-5. [**retrospective_and_analysis.md**](file:///c:/Users/7moody/Desktop/pac-man/project_management/retrospective_and_analysis.md): Technical choices analysis, architectural rationale, and summary of blocking points.
+Current responsibilities follow
+[PACMAN_TEAM_PARTS.md](../PACMAN_TEAM_PARTS.md):
 
----
+| Member | Study, testing and defense lead |
+| --- | --- |
+| **mal-jama** | Part 2: application, UI, configuration, highscores, release and documentation |
+| **mewaysi** | Part 1: engine, maze, movement, ghosts and gameplay |
+| **Both** | Application/model integration, smoke checks, subject requirements and review evidence |
 
-## 🎯 Project Management Methodology
-
-- **Framework:** Lightweight Agile / 14-Day Sprint with daily check-ins.
-- **Tracking Tool:** Markdown-based Kanban and daily checklists committed directly to the repository.
-- **Review Strategy:** Pair reviews on all PRs, strict CI-like lint checks (`make lint`) before merging to `main`.
+Members prepare their assigned explanations and tests, then review shared
+interfaces together. These are current responsibilities, not a reconstructed
+individual authorship history. No unrecorded peer sign-off or deployment is
+claimed. Native desktop review and a verified free unlisted/private platform
+upload remain release gates. Final test/build results are tracked in the
+acceptance record.

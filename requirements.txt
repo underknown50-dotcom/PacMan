@@ -1,5 +1,2 @@
-# Dependencies for 42 Pac-Man
-./wheels/mazegenerator-2.1.0-py3-none-any.whl
-pygame-ce>=2.5.0
-flake8>=7.0.0
-mypy>=1.10.0
+pygame==2.6.1
+./vendor/mazegenerator-2.1.0-py3-none-any.whl

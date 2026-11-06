@@ -6,7 +6,7 @@ exclude =
     .mypy_cache,
     build,
     dist,
-    wheels
+    vendor
 max-line-length = 79
 show-source = True
 count = True

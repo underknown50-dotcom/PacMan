@@ -1,155 +1,124 @@
-"""Persistent highscore system for Pac-Man.
+"""Validate, rank and atomically persist the ten best completed runs."""
 
-Stores the top 10 highest scores with player names in a local JSON file.
-Ensures strict validation of player names (max 10 alphanumeric characters
-and spaces) and non-negative integer scores, while gracefully handling any
-file corruption, missing files, or I/O errors.
-"""
-
+from dataclasses import dataclass
 import json
+import logging
 import os
+from pathlib import Path
 import re
-from dataclasses import asdict, dataclass
-from typing import List, Tuple
+import tempfile
 
 
-@dataclass
-class HighscoreEntry:
-    """Represents a single player's score entry."""
+LOGGER = logging.getLogger(__name__)
+_NAME_PATTERN = re.compile(r"[A-Za-z0-9 ]{1,10}\Z")
+
+
+@dataclass(frozen=True)
+class ScoreEntry:
+    """Store a printable player name and a non-negative integer score."""
 
     name: str
     score: int
 
-    def to_tuple(self) -> Tuple[str, int]:
-        """Convert entry to a (name, score) tuple."""
-        return self.name, self.score
+
+def validate_name(name: str) -> bool:
+    """Accept at most ten ASCII letters, digits or spaces with visible text."""
+    return bool(_NAME_PATTERN.fullmatch(name)) and bool(name.strip())
 
 
-class HighscoreManager:
-    """Manages reading, updating, and persisting the top 10 highscores."""
+class HighScoreStore:
+    """Keep a usable in-memory leaderboard when persistence is unavailable."""
 
-    MAX_ENTRIES = 10
-    MAX_NAME_LENGTH = 10
-    NAME_PATTERN = re.compile(r"^[a-zA-Z0-9 ]{1,10}$")
+    def __init__(self, path: Path) -> None:
+        """Create an empty store whose reads and writes use the given path."""
+        self.path = path
+        self.entries: list[ScoreEntry] = []
+        self.last_warning = ""
 
-    def __init__(self, filepath: str = "highscores.json") -> None:
-        """Initialize the manager with a target JSON file path."""
-        self.filepath = filepath
-        self.scores: List[HighscoreEntry] = []
-        self.load()
+    def _warn(self, message: str) -> None:
+        """Keep the latest recoverable problem available to the interface."""
+        self.last_warning = message
+        LOGGER.warning("%s", message)
 
-    @classmethod
-    def sanitize_name(cls, name: str) -> str:
-        """Sanitize and validate player name according to Chapter 5.5.
-
-        Player names must be max 10 characters, alphanumeric and spaces only.
-        """
-        if not name:
-            return "Player"
-        # Keep only alphanumeric and spaces
-        cleaned = re.sub(r"[^a-zA-Z0-9 ]", "", name).strip()
-        if not cleaned:
-            return "Player"
-        return cleaned[: cls.MAX_NAME_LENGTH]
-
-    def is_valid_name(self, name: str) -> bool:
-        """Check if a name strictly matches the required specification."""
-        if not name or len(name) > self.MAX_NAME_LENGTH:
-            return False
-        return bool(self.NAME_PATTERN.match(name))
-
-    def load(self) -> List[HighscoreEntry]:
-        """Load highscores from the JSON file on disk.
-
-        Handles missing files, corrupt data, and invalid types cleanly.
-        """
-        self.scores = []
-        if not os.path.exists(self.filepath):
-            # Normal on first launch
-            return self.scores
-
+    def load(self) -> None:
+        """Read valid records, tolerating missing or damaged files."""
+        self.last_warning = ""
         try:
-            with open(self.filepath, "r", encoding="utf-8") as file:
-                data = json.load(file)
-        except (OSError, json.JSONDecodeError, ValueError) as err:
-            print(
-                f"[Highscore Warning] Cannot read '{self.filepath}': "
-                f"{err}. Starting with empty score table."
+            with self.path.open("r", encoding="utf-8") as stream:
+                records: object = json.load(stream)
+        except FileNotFoundError:
+            self.entries = []
+            return
+        except (OSError, UnicodeError, ValueError, RecursionError) as error:
+            self._warn(f"Cannot load highscores: {error}")
+            return
+        if not isinstance(records, list):
+            self._warn("Highscores must contain a JSON array; ignoring file")
+            return
+        valid: list[ScoreEntry] = []
+        invalid = 0
+        for record in records:
+            if not isinstance(record, dict):
+                invalid += 1
+                continue
+            name: object = record.get("name")
+            score: object = record.get("score")
+            if (
+                not isinstance(name, str) or not validate_name(name)
+                or isinstance(score, bool) or not isinstance(score, int)
+                or score < 0
+            ):
+                invalid += 1
+                continue
+            valid.append(ScoreEntry(name.strip(), score))
+        # Stable sorting keeps older records first when scores are tied.
+        self.entries = sorted(valid, key=lambda entry: -entry.score)[:10]
+        if invalid:
+            self._warn(f"Ignored {invalid} invalid highscore record(s)")
+
+    def add(self, name: str, score: int) -> bool:
+        """Add a validated run in memory and retain the ten best scores."""
+        self.last_warning = ""
+        if not validate_name(name):
+            self._warn(
+                "Use 1-10 ASCII letters, digits or spaces; no blank name"
             )
-            return self.scores
-
-        if not isinstance(data, list):
-            print(
-                "[Highscore Warning] File content is not a list; "
-                "resetting highscores."
-            )
-            return self.scores
-
-        for item in data:
-            if isinstance(item, dict):
-                raw_name = item.get("name")
-                raw_score = item.get("score")
-                if isinstance(raw_name, str) and isinstance(raw_score, int):
-                    name = self.sanitize_name(raw_name)
-                    score = max(0, raw_score)
-                    self.scores.append(HighscoreEntry(name=name, score=score))
-
-        self._sort_and_trim()
-        return self.scores
+            return False
+        if isinstance(score, bool) or not isinstance(score, int) or score < 0:
+            self._warn("A highscore must be a non-negative integer")
+            return False
+        self.entries.append(ScoreEntry(name.strip(), score))
+        self.entries.sort(key=lambda entry: -entry.score)
+        self.entries = self.entries[:10]
+        return True
 
     def save(self) -> bool:
-        """Save the current top 10 scores to disk.
-
-        Returns:
-            True if saving succeeded, False otherwise.
-        """
+        """Atomically replace the JSON file and tolerate write errors."""
+        self.last_warning = ""
+        temporary: Path | None = None
         try:
-            self._sort_and_trim()
-            payload = [asdict(entry) for entry in self.scores]
-            with open(self.filepath, "w", encoding="utf-8") as file:
-                json.dump(payload, file, indent=2)
-            return True
-        except OSError as err:
-            print(
-                f"[Highscore Warning] Failed to save highscores to "
-                f"'{self.filepath}': {err}."
-            )
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=self.path.parent,
+                prefix=".highscores-", suffix=".tmp", delete=False,
+            ) as stream:
+                temporary = Path(stream.name)
+                json.dump(
+                    [{"name": item.name, "score": item.score}
+                     for item in self.entries],
+                    stream, indent=2, ensure_ascii=True,
+                )
+                stream.write("\n")
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, self.path)
+        except (OSError, ValueError) as error:
+            self._warn(f"Cannot save highscores (kept in memory): {error}")
             return False
-
-    def add_score(self, name: str, score: int) -> bool:
-        """Add a new score and update the persistent table.
-
-        Args:
-            name: Player name string.
-            score: Non-negative integer score.
-
-        Returns:
-            True if the score made it into the top 10, False otherwise.
-        """
-        sanitized_name = self.sanitize_name(name)
-        safe_score = max(0, int(score))
-
-        entry = HighscoreEntry(name=sanitized_name, score=safe_score)
-        self.scores.append(entry)
-        self._sort_and_trim()
-        self.save()
-
-        # Returns True if the newly added entry remains in the top 10
-        return entry in self.scores
-
-    def is_highscore(self, score: int) -> bool:
-        """Check if a score qualifies for the top 10."""
-        if score <= 0:
-            return False
-        if len(self.scores) < self.MAX_ENTRIES:
-            return True
-        return score > self.scores[-1].score
-
-    def get_top_entries(self) -> List[Tuple[str, int]]:
-        """Return the top 10 scores as list of (name, score) tuples."""
-        return [entry.to_tuple() for entry in self.scores]
-
-    def _sort_and_trim(self) -> None:
-        """Sort scores in descending order and keep top 10."""
-        self.scores.sort(key=lambda item: item.score, reverse=True)
-        self.scores = self.scores[: self.MAX_ENTRIES]
+        finally:
+            if temporary is not None:
+                try:
+                    temporary.unlink(missing_ok=True)
+                except OSError:
+                    pass
+        return True

@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-26",
+  "backend": "SDL dummy",
+  "results": [
+    {
+      "size": "1000x850",
+      "frames": 150,
+      "mean_ms": 10.99,
+      "p95_ms": 14.44,
+      "background_layers": 1,
+      "global_rng": "unchanged"
+    },
+    {
+      "size": "640x544",
+      "frames": 150,
+      "mean_ms": 6.83,
+      "p95_ms": 8.68,
+      "background_layers": 1,
+      "global_rng": "unchanged"
+    }
+  ]
+}
