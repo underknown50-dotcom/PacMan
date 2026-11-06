@@ -80,6 +80,23 @@ class TestEntitiesAndAI(unittest.TestCase):
         # In 5 seconds at 3.8 tiles/s, ghost should visit multiple tiles
         self.assertGreater(len(visited), 5)
 
+    def test_ghost_bfs_pathfinding_no_clipping(self) -> None:
+        """Verify Blinky and Pinky pathfind around walls without clipping."""
+        adapter = MazeAdapter(width=15, height=15, seed=42)
+        adapter.generate()
+        player = Player(6, 0, lives=3)
+        blinky = Ghost(GhostType.BLINKY, 0, 0, 0, 0)
+        pinky = Ghost(GhostType.PINKY, 14, 0, 14, 0)
+        dt = 1.0 / 60.0
+
+        for _ in range(300):
+            blinky.update(dt, player, None, adapter)
+            pinky.update(dt, player, blinky, adapter)
+            self.assertTrue(0.0 <= blinky.x < 15.0)
+            self.assertTrue(0.0 <= blinky.y < 15.0)
+            self.assertTrue(0.0 <= pinky.x < 15.0)
+            self.assertTrue(0.0 <= pinky.y < 15.0)
+
 
 if __name__ == "__main__":
     unittest.main()

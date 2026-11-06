@@ -13,8 +13,9 @@ Includes:
 
 import math
 import random
+from collections import deque
 from enum import Enum, auto
-from typing import List, Optional, Tuple
+from typing import Deque, List, Optional, Set, Tuple
 from pacman.adapter import MazeAdapter
 
 
@@ -296,22 +297,15 @@ class Ghost:
             if self.direction == Direction.NONE:
                 return
 
-        # Advance along current direction towards next tile center
+        # Move along current direction towards next tile center
         while move_dist > 1e-6:
-            if self.direction == Direction.RIGHT:
-                target_coord = float(int(math.floor(self.x + 1e-7)) + 1)
-                dist = target_coord - self.x
-            elif self.direction == Direction.LEFT:
-                target_coord = float(int(math.ceil(self.x - 1e-7)) - 1)
-                dist = self.x - target_coord
-            elif self.direction == Direction.DOWN:
-                target_coord = float(int(math.floor(self.y + 1e-7)) + 1)
-                dist = target_coord - self.y
-            elif self.direction == Direction.UP:
-                target_coord = float(int(math.ceil(self.y - 1e-7)) - 1)
-                dist = self.y - target_coord
+            target_x = self.grid_x + self.direction.dx
+            target_y = self.grid_y + self.direction.dy
+
+            if self.direction.dx != 0:
+                dist = abs(float(target_x) - self.x)
             else:
-                break
+                dist = abs(float(target_y) - self.y)
 
             if move_dist < dist:
                 self.x += self.direction.dx * move_dist
@@ -319,8 +313,8 @@ class Ghost:
                 move_dist = 0.0
             else:
                 move_dist -= dist
-                self.grid_x += self.direction.dx
-                self.grid_y += self.direction.dy
+                self.grid_x = target_x
+                self.grid_y = target_y
                 self.x = float(self.grid_x)
                 self.y = float(self.grid_y)
 
@@ -378,20 +372,62 @@ class Ghost:
 
         # Target calculation based on ghost personality
         target_x, target_y = self._calculate_target(player, blinky)
+        self.direction = self._bfs_next_direction(
+            maze, target_x, target_y, valid_dirs
+        )
 
-        # Choose valid direction that minimizes Euclidean distance to target
-        best_dir = valid_dirs[0]
+    def _bfs_next_direction(
+        self,
+        maze: MazeAdapter,
+        target_x: int,
+        target_y: int,
+        valid_initial_dirs: List[Direction],
+    ) -> Direction:
+        """Find the corridor direction along the shortest path to target."""
+        if len(valid_initial_dirs) == 1:
+            return valid_initial_dirs[0]
+
+        tx = max(0, min(maze.width - 1, target_x))
+        ty = max(0, min(maze.height - 1, target_y))
+
+        queue: Deque[Tuple[int, int, Direction]] = deque()
+        visited: Set[Tuple[int, int]] = {(self.grid_x, self.grid_y)}
+
+        for d in valid_initial_dirs:
+            nx, ny = self.grid_x + d.dx, self.grid_y + d.dy
+            if (nx, ny) == (tx, ty):
+                return d
+            visited.add((nx, ny))
+            queue.append((nx, ny, d))
+
+        all_dirs = [
+            Direction.UP,
+            Direction.LEFT,
+            Direction.DOWN,
+            Direction.RIGHT,
+        ]
+
+        while queue:
+            cx, cy, first_dir = queue.popleft()
+            for d in all_dirs:
+                if maze.can_move(cx, cy, d.dx, d.dy):
+                    nx, ny = cx + d.dx, cy + d.dy
+                    if (nx, ny) not in visited:
+                        if (nx, ny) == (tx, ty):
+                            return first_dir
+                        visited.add((nx, ny))
+                        queue.append((nx, ny, first_dir))
+
+        # Fallback to Euclidean heuristic if target unreachable
+        best_dir = valid_initial_dirs[0]
         best_dist = float("inf")
-
-        for d in valid_dirs:
-            next_x = self.grid_x + d.dx
-            next_y = self.grid_y + d.dy
-            dist = (next_x - target_x) ** 2 + (next_y - target_y) ** 2
+        for d in valid_initial_dirs:
+            nx, ny = self.grid_x + d.dx, self.grid_y + d.dy
+            dist = (nx - tx) ** 2 + (ny - ty) ** 2
             if dist < best_dist:
                 best_dist = dist
                 best_dir = d
-
-        self.direction = best_dir
+        return best_dir
 
     def _calculate_target(
         self, player: Player, blinky: Optional["Ghost"]
