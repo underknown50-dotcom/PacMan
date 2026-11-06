@@ -116,7 +116,10 @@ class Renderer:
         offset_x = (
             self.screen_width - (self.game.maze.width * self.TILE_SIZE)
         ) // 2
-        offset_y = self.HUD_HEIGHT
+        available_h = self.screen_height - self.HUD_HEIGHT
+        offset_y = self.HUD_HEIGHT + (
+            available_h - (self.game.maze.height * self.TILE_SIZE)
+        ) // 2
 
         self._draw_maze(offset_x, offset_y)
         self._draw_collectibles(offset_x, offset_y)
@@ -421,11 +424,18 @@ class Renderer:
         for i, opt in enumerate(self.menu_options):
             is_sel = i == self.menu_cursor
             color = (255, 255, 0) if is_sel else (180, 180, 180)
-            prefix = "▶ " if is_sel else "   "
-            txt = self.font_header.render(prefix + opt, True, color)
-            self.screen.blit(
-                txt, (self.screen_width // 2 - 120, start_y + (i * 45))
-            )
+            txt = self.font_header.render(opt, True, color)
+            opt_x = self.screen_width // 2 - 80
+            opt_y = start_y + (i * 45)
+            self.screen.blit(txt, (opt_x, opt_y))
+
+            if is_sel:
+                arrow = [
+                    (opt_x - 24, opt_y + 4),
+                    (opt_x - 24, opt_y + 20),
+                    (opt_x - 10, opt_y + 12),
+                ]
+                pygame.draw.polygon(self.screen, (255, 255, 0), arrow)
 
         footer = self.font_small.render(
             "Use UP/DOWN to navigate, ENTER to select",
@@ -457,11 +467,18 @@ class Renderer:
         for i, opt in enumerate(self.pause_options):
             is_sel = i == self.pause_cursor
             color = (255, 255, 0) if is_sel else (180, 180, 180)
-            prefix = "▶ " if is_sel else "   "
-            txt = self.font_header.render(prefix + opt, True, color)
-            self.screen.blit(
-                txt, (self.screen_width // 2 - 120, start_y + (i * 50))
-            )
+            txt = self.font_header.render(opt, True, color)
+            opt_x = self.screen_width // 2 - 80
+            opt_y = start_y + (i * 50)
+            self.screen.blit(txt, (opt_x, opt_y))
+
+            if is_sel:
+                arrow = [
+                    (opt_x - 24, opt_y + 4),
+                    (opt_x - 24, opt_y + 20),
+                    (opt_x - 10, opt_y + 12),
+                ]
+                pygame.draw.polygon(self.screen, (255, 255, 0), arrow)
 
     def _draw_game_over_screen(self) -> None:
         """Render Game Over screen with interactive highscore name prompt."""
@@ -580,13 +597,25 @@ class Renderer:
                 (self.screen_width // 2 - empty_txt.get_width() // 2, 200),
             )
         else:
-            header_txt = self.font_normal.render(
-                f"{'RANK':<6} {'NAME':<14} {'SCORE':>8}",
-                True,
-                (0, 200, 255),
-            )
-            self.screen.blit(
-                header_txt, (self.screen_width // 2 - 130, start_y)
+            mid_x = self.screen_width // 2
+            rank_x = mid_x - 140
+            name_x = mid_x - 60
+            score_x = mid_x + 140
+
+            # Table column headers
+            r_hdr = self.font_normal.render("RANK", True, (0, 200, 255))
+            n_hdr = self.font_normal.render("NAME", True, (0, 200, 255))
+            s_hdr = self.font_normal.render("SCORE", True, (0, 200, 255))
+            self.screen.blit(r_hdr, (rank_x, start_y))
+            self.screen.blit(n_hdr, (name_x, start_y))
+            self.screen.blit(s_hdr, (score_x - s_hdr.get_width(), start_y))
+
+            pygame.draw.line(
+                self.screen,
+                (40, 40, 100),
+                (rank_x, start_y + 24),
+                (score_x, start_y + 24),
+                width=1,
             )
 
             for rank, (name, sc) in enumerate(scores, start=1):
@@ -595,12 +624,14 @@ class Renderer:
                     if rank == 1
                     else (210, 210, 210)
                 )
-                line = f"{rank:<6} {name:<14} {sc:>8}"
-                entry_txt = self.font_normal.render(line, True, color)
-                self.screen.blit(
-                    entry_txt,
-                    (self.screen_width // 2 - 130, start_y + (rank * 26)),
-                )
+                row_y = start_y + 10 + (rank * 26)
+                r_txt = self.font_normal.render(str(rank), True, color)
+                n_txt = self.font_normal.render(name, True, color)
+                s_txt = self.font_normal.render(f"{sc:,}", True, color)
+
+                self.screen.blit(r_txt, (rank_x + 8, row_y))
+                self.screen.blit(n_txt, (name_x, row_y))
+                self.screen.blit(s_txt, (score_x - s_txt.get_width(), row_y))
 
         footer = self.font_small.render(
             "Press ESC or ENTER to return to Main Menu",
@@ -629,22 +660,22 @@ class Renderer:
 
         lines = [
             ("CONTROLS:", cyan),
-            ("  • Arrow Keys / WASD : Steer Pac-Man through maze", white),
-            ("  • P : Pause / Resume ongoing game", white),
-            ("  • ESC : Return to menu", white),
+            ("  * Arrow Keys / WASD : Steer Pac-Man through corridors", white),
+            ("  * P                 : Pause / Resume ongoing game", white),
+            ("  * ESC               : Return to Main Menu", white),
             ("", (0, 0, 0)),
             ("GAMEPLAY RULES:", cyan),
-            ("  • Eat all small pacgums in corridors to clear level.", white),
-            ("  • Super-pacgums in 4 corners turn ghosts edible!", white),
-            ("  • 4 ghost personalities: Blinky, Pinky, Inky & Clyde.", white),
-            ("  • Complete all 10 levels to win the campaign!", white),
+            ("  * Eat all small pacgums in corridors to clear level", white),
+            ("  * Super-pacgums in 4 corners turn ghosts edible!", white),
+            ("  * 4 ghost personalities: Blinky, Pinky, Inky & Clyde", white),
+            ("  * Complete all 10 campaign levels to achieve VICTORY", white),
             ("", (0, 0, 0)),
             ("CHEAT HOTKEYS (Chapter 6.5 Review Mode):", orange),
-            ("  • [ I ] : Toggle Invincibility (no lives lost)", gray),
-            ("  • [ L ] : Level Skip (instantly complete level)", gray),
-            ("  • [ F ] : Freeze Ghosts (stop all ghost movement)", gray),
-            ("  • [ + ] : Extra Life (increase remaining lives)", gray),
-            ("  • [ S ] : Speed Boost (player moves faster)", gray),
+            ("  * [ I ] : Toggle Invincibility (never lose lives)", gray),
+            ("  * [ L ] : Level Skip (instantly complete level)", gray),
+            ("  * [ F ] : Freeze Ghosts (halt all ghost movement)", gray),
+            ("  * [ + ] : Extra Life (add 1 remaining life)", gray),
+            ("  * [ B ] : Speed Boost (move +60% faster)", gray),
         ]
 
         start_y = 90
