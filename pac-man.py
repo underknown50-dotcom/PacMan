@@ -119,7 +119,7 @@ def run_game_loop(game: Game, renderer: Renderer) -> None:
                     game.cheat_toggle_ghost_freeze()
                 elif event.key in (pygame.K_PLUS, pygame.K_EQUALS):
                     game.cheat_add_life()
-                elif event.key == pygame.K_s:
+                elif event.key == pygame.K_b:
                     game.cheat_toggle_speed()
 
             elif game.state == GameState.PAUSED:

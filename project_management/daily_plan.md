@@ -205,7 +205,7 @@
 **Goal:** Add reviewer cheat features required by Chapter 6.5.
 
 - [x] **Teammate A (Cheat Hotkeys & Feedback):**
-  - [x] Bind dedicated cheat keys (e.g., `I` for Invincible, `L` for Level Skip, `F` for Freeze, `+` for Extra Life, `S` for Speed Boost).
+  - [x] Bind dedicated cheat keys (e.g., `I` for Invincible, `L` for Level Skip, `F` for Freeze, `+` for Extra Life, `B` for Speed Boost).
   - [x] Add visual badge on HUD indicating active cheats (e.g., `[CHEAT: INVINCIBLE]`).
 - [x] **Teammate B (Cheat State Integration):**
   - [x] Implement cheat logic toggles in `GameState`.

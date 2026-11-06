@@ -70,7 +70,7 @@ def build_package() -> None:
             "   - L : Skip current level\n"
             "   - F : Freeze all ghosts\n"
             "   - + : Add extra life\n"
-            "   - S : Speed boost\n\n"
+            "   - B : Speed boost\n\n"
             "4. CONFIGURATION:\n"
             "   Modify 'config.json' to change starting lives, points,\n"
             "   and maze dimensions for each level.\n"

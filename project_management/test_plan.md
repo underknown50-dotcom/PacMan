@@ -48,7 +48,7 @@
   - `L`: Skip Level (advances to next level immediately).
   - `F`: Freeze Ghosts (ghosts halt in corridors).
   - `+`: Extra Life (increments life count).
-  - `S`: Speed Boost (speeds Pac-Man by 60%).
+  - `B`: Speed Boost (speeds Pac-Man by 60%).
 - **Status:** **VERIFIED & PASSED**
 
 ### TC-05: 10-Level Campaign Progression & Timer

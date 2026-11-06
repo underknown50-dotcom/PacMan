@@ -82,7 +82,7 @@ The packaged binary, configuration, and in-package instructions will be built in
 - **`L`**: **Level Skip** (Instantly completes the current level)
 - **`F`**: **Ghost Freeze** (Stops all ghost movement)
 - **`+` / `=`**: **Extra Life** (Adds 1 life)
-- **`S`**: **Speed Boost** (Increases Pac-Man's movement speed by 60%)
+- **`B`**: **Speed Boost** (Increases Pac-Man's movement speed by 60%)
 
 ---
 
