@@ -552,3 +552,20 @@ the team records their actual completion.
 - [itch.io access control](https://itch.io/docs/creators/access-control) and
   [pricing](https://itch.io/docs/creators/pricing) support the manual unlisted,
   free publication procedure.
+
+### Use of AI
+
+In accordance with 42 curriculum guidelines (Chapter 2):
+- **Tools used:** LLM-based coding assistants and code analysis tools.
+- **Tasks and project areas:**
+  - Formulating mathematical models for authentic arcade ghost targeting
+    (Blinky direct pursuit, Pinky directional projection, Inky vector
+    reflection across a pivot, and Clyde Euclidean distance retreat).
+  - Designing defensive unit test scenarios for edge cases (malformed JSON,
+    non-finite floats, path traversal security, and BFS tie-breaking).
+  - Structuring project management documentation, risk matrices, and decision
+    records under the project_management/ directory.
+  - Reviewing static typing and PEP 8 formatting to satisfy mypy --strict.
+- **Validation and team ownership:** Every algorithm, architecture choice, and
+  code path was critically examined, tested, and verified by mal-jama and
+  mewaysi to ensure full technical understanding and defense readiness.
