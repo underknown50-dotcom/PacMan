@@ -1,7 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-*$py.class
+*.class
 
 # Virtual environments
 .venv/
@@ -17,7 +17,11 @@ env/
 build/
 dist/
 *.egg-info/
-!pac-man.spec
+!pacman.spec
+
+# Runtime & user data
+highscores.json
+*.log
 
 # OS files
 .DS_Store
