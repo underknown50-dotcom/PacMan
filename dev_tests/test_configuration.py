@@ -279,3 +279,17 @@ def test_scores_cannot_overwrite_active_config(tmp_path: Path) -> None:
     config = load_config(path)
     assert config.highscore_filename == '@userdata/highscores.json'
     assert 'settings.json' in path.read_text(encoding='utf-8')
+
+
+def test_case_insensitive_keys(tmp_path: Path) -> None:
+    """Configuration field names accept uppercase and mixed-case keys."""
+    path = tmp_path / "mixed.json"
+    path.write_text(
+        '{"LIVES": 5, "SEED": 77, "Levels": [{"WIDTH": 21, "HEIGHT": 19}]}',
+        encoding="utf-8",
+    )
+    config = load_config(path)
+    assert config.lives == 5
+    assert config.seed == 77
+    assert config.levels[0].width == 21
+    assert config.levels[0].height == 19

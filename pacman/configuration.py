@@ -114,10 +114,13 @@ def _number(
 
 
 def _object(value: object) -> dict[str, object] | None:
-    """Return string-keyed JSON object fields or reject a different type."""
+    """Return lowercase-keyed JSON fields or reject a different type."""
     if not isinstance(value, dict):
         return None
-    return {key: item for key, item in value.items() if isinstance(key, str)}
+    return {
+        key.lower(): item for key, item in value.items()
+        if isinstance(key, str)
+    }
 
 
 def _levels(data: dict[str, object], time_limit: float) -> tuple[
