@@ -36,7 +36,6 @@ rm -rf -- "$release_dir"
 mkdir -p -- "$release_dir"
 cp -a -- "$project_root/dist/pacman42/." "$release_dir/"
 cp -- config.json config.comments.json PLAYER_GUIDE.txt README.md "$release_dir/"
-cp -- PACMAN_TEAM_PARTS.md "$release_dir/"
 cat > "$release_dir/run.sh" <<'LAUNCHER'
 #!/usr/bin/env sh
 set -eu

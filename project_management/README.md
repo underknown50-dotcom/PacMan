@@ -22,7 +22,7 @@ originally authored a particular file.
 ## Team organization
 
 Current responsibilities follow
-[PACMAN_TEAM_PARTS.md](../PACMAN_TEAM_PARTS.md):
+[team_organization.md](team_organization.md):
 
 | Member | Study, testing and defense lead |
 | --- | --- |

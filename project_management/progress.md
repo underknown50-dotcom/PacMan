@@ -47,7 +47,7 @@ so this is route-budget evidence rather than unassisted difficulty validation.
 ## Current team responsibilities
 
 The project team is **mal-jama** and **mewaysi**. The current study/defense
-assignment in [PACMAN_TEAM_PARTS.md](../PACMAN_TEAM_PARTS.md) gives Part 2
+assignment in [team_organization.md](team_organization.md) gives Part 2
 (UI/application/configuration/highscores/release) to mal-jama and Part 1
 (engine/maze/player/ghosts/gameplay) to mewaysi. Shared integration and evidence
 review belong to both members. This clarification does not backdate individual

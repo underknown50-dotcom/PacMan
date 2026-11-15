@@ -44,4 +44,4 @@ or secret credentials are needed in this repository or chat.
 No team conflict has been reported. New integration defects should be recorded
 with their concrete trigger, affected module, current investigation lead, fix
 and the actual repeated check. Study and defense responsibilities follow
-[PACMAN_TEAM_PARTS.md](../PACMAN_TEAM_PARTS.md).
+[team_organization.md](team_organization.md).

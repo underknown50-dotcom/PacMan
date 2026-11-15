@@ -355,8 +355,7 @@ the parser warns and selects user data so score saving cannot overwrite it.
 
 ## Maze Generation
 
-The assigned artifacts are `mazegenerator-00001(1).zip` and its original
-`mazegenerator-2.1.0-py3-none-any.whl`. The wheel copied into `vendor/` is
+The assigned artifact is `vendor/mazegenerator-2.1.0-py3-none-any.whl`. The wheel copied into `vendor/` is
 byte-for-byte identical. Original artifact SHA-256 values are recorded in
 [artifact_hashes.json](project_management/artifact_hashes.json). No generator
 source, installation metadata or algorithm is modified or monkey-patched.
@@ -508,7 +507,7 @@ rules in `models.py`, menu behavior in `app.py`, appearance in `rendering.py`.
 
 Pac-Man 42 is a team project by **mal-jama** and **mewaysi**. Current study,
 testing and defense responsibilities follow
-[PACMAN_TEAM_PARTS.md](PACMAN_TEAM_PARTS.md):
+[team_organization.md](project_management/team_organization.md):
 
 | Member | Assigned part | Main responsibilities |
 | --- | --- | --- |
@@ -532,9 +531,7 @@ the team records their actual completion.
 
 ## Resources
 
-- The supplied [en.subject-3.pdf](../en.subject-3.pdf), Pacman version 1.5, is
-  the local assignment authority. It is retained unchanged beside the project
-  folder and excluded from the game distribution.
+- The 42 Pac-man subject (v1.5) provides the core game and architectural specifications.
 - The supplied original `mazegenerator` 2.1.0 wheel and installed metadata are
   the authority for its actual constructor, wall masks and package metadata.
 - [Python JSON](https://docs.python.org/3/library/json.html) documents the parser

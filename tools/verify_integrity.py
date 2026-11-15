@@ -14,9 +14,6 @@ from zipfile import BadZipFile, ZipFile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ORIGINAL_WHEEL = (
-    "mazegenerator-00001(1)/mazegenerator-2.1.0-py3-none-any.whl"
-)
 VENDOR_WHEEL = "vendor/mazegenerator-2.1.0-py3-none-any.whl"
 
 
@@ -34,18 +31,11 @@ def _sha256(path: Path) -> str:
 
 
 def _artifact_path(relative: str) -> Path:
-    """Locate original inputs beside the project or its source directory."""
-    names = [relative]
-    if relative.startswith("mazegenerator-00001(1)/"):
-        names.append(relative.replace(
-            "mazegenerator-00001(1)/", "mazegenerator-00001/", 1,
-        ))
-    for base in (ROOT, ROOT.parent):
-        for name in names:
-            candidate = base / name
-            if candidate.is_file():
-                return candidate
-    raise IntegrityError(f"Original artifact is missing: {relative}")
+    """Locate artifact inside the project folder."""
+    candidate = ROOT / relative
+    if candidate.is_file():
+        return candidate
+    raise IntegrityError(f"Artifact is missing: {relative}")
 
 
 def _load_manifest() -> dict[str, str]:
@@ -66,8 +56,8 @@ def _load_manifest() -> dict[str, str]:
         if not path.is_relative_to(ROOT):
             raise IntegrityError("An artifact path leaves the project folder.")
         manifest[relative] = digest
-    if ORIGINAL_WHEEL not in manifest:
-        raise IntegrityError("The original wheel is missing from inventory.")
+    if VENDOR_WHEEL not in manifest:
+        raise IntegrityError("The vendor wheel is missing from inventory.")
     return manifest
 
 
@@ -158,19 +148,15 @@ def _verify_installed_package(wheel: Path) -> None:
 
 
 def verify() -> None:
-    """Verify originals, the vendor copy and the installed dependency."""
+    """Verify the vendor copy and the installed dependency."""
     manifest = _load_manifest()
     for relative, expected in manifest.items():
-        original = _artifact_path(relative)
-        digest = _sha256(original)
+        artifact = _artifact_path(relative)
+        digest = _sha256(artifact)
         if digest != expected:
-            raise IntegrityError(f"Original artifact changed: {relative}")
-        print(f"OK original SHA256 {digest} {original}")
-    vendor_digest = _sha256(ROOT / VENDOR_WHEEL)
-    if vendor_digest != manifest[ORIGINAL_WHEEL]:
-        raise IntegrityError("The vendor wheel differs from the original.")
-    print(f"OK vendor SHA256 {vendor_digest} {VENDOR_WHEEL}")
-    _verify_installed_package(_artifact_path(ORIGINAL_WHEEL))
+            raise IntegrityError(f"Artifact changed: {relative}")
+        print(f"OK SHA256 {digest} {relative}")
+    _verify_installed_package(ROOT / VENDOR_WHEEL)
 
 
 def main() -> int:

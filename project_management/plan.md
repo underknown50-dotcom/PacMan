@@ -3,7 +3,7 @@
 Implementation/check records begin on 2026-10-22; the garden-menu update is
 recorded on 2026-10-26. The table below maps the work areas to the team's
 **current study and defense leads**, as specified in
-[PACMAN_TEAM_PARTS.md](../PACMAN_TEAM_PARTS.md). It does not assign historical
+[team_organization.md](team_organization.md). It does not assign historical
 implementation authorship.
 
 | Order | Deliverable | Acceptance gate | Study/defense lead |

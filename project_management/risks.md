@@ -18,7 +18,7 @@
 | Headless tests miss native desktop behavior | Dummy-driver tests verify lifecycle/rendering; the team still needs a real desktop keyboard and visual check. |
 | New glibc build fails on older Linux | State platform target; rebuild on the oldest intended Linux distribution. No cross-platform compatibility is claimed. |
 | Tests pass but long-run difficulty is unbalanced | Reviewer tools make features inspectable; human unassisted difficulty/playability tuning remains a joint team review activity. |
-| A member cannot explain their assigned part or shared interfaces | Follow PACMAN_TEAM_PARTS.md, review actual modules/tests, and practice small defense changes together. |
+| A member cannot explain their assigned part or shared interfaces | Follow team_organization.md, review actual modules/tests, and practice small defense changes together. |
 | Team responsibility split becomes inconsistent | Use the agreed Part 2/Part 1 assignment: mal-jama handles UI/application/services/release; mewaysi handles engine/maze/gameplay; both review integration. |
 | Local release mistaken for platform publication | Explicit manual itch.io procedure; only a verified real URL closes that release gate. |
 

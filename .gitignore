@@ -57,6 +57,11 @@ desktop.ini
 *.swo
 *~
 
-# Local study & defense notes
+# Unsubmitted subject specifications, archives & guides (Chapter 3.3 & 10)
+*.pdf
+*.zip
+*.tar.gz
+mazegenerator-00001*/
+PACMAN_TEAM_PARTS.md
 *DEFENSE*.md
 *defense*.md
