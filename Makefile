@@ -23,7 +23,11 @@ lint-strict:
 	PATH="$(abspath $(BIN)):$$PATH" mypy . --strict
 
 test:
-	"$(BIN)/python" -m pytest dev_tests -q
+	@if [ -d dev_tests ]; then \
+		"$(BIN)/python" -m pytest dev_tests -q; \
+	else \
+		echo "dev_tests excluded from submission per Chapter 3.3 (not submitted or graded)."; \
+	fi
 
 smoke:
 	@smoke_data=$$(mktemp -d -t pacman-smoke.XXXXXX); \
