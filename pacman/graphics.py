@@ -420,7 +420,7 @@ class Graphics:
 
     def tick(self) -> float:
         """Pace the loop to sixty frames per second and return elapsed time."""
-        return self._clock.tick(60) / 1000.0
+        return float(self._clock.tick(60)) / 1000.0
 
     def save_screenshot(self, path: Path) -> None:
         """Save the current pixel buffer for developer visual verification."""
