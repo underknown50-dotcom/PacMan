@@ -1,29 +1,58 @@
+# =============================================================================
+# 42 Curriculum Pac-Man: .gitignore
+# Excludes Python artifacts, virtual environments, caches, and build outputs.
+# =============================================================================
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *.class
+*.so
 
-# Virtual environments
+# Virtual environments (PEP 405)
 .venv/
 venv/
 ENV/
 env/
+env.bak/
+venv.bak/
 
-# Type checker & linter caches
+# Type checker, test & coverage caches
 .mypy_cache/
 .pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.cache/
 
-# Distribution / packaging
+# Build and Distribution artifacts (Chapter 7)
 build/
 dist/
+release/
 *.egg-info/
+*.egg
 !pacman.spec
 
-# Runtime & user data
+# Runtime & User-generated state
 highscores.json
 *.log
+*.tmp
+*.temp
 
-# OS files
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
-release/
+desktop.ini
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
