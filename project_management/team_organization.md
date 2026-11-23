@@ -1,26 +1,19 @@
-# 👥 Team Organization & Responsibility Matrix
+# Team Organization
 
-> **Team Members:** `mewaysi` & `mal-jama`  
-> **Project:** 42 Pac-Man
+**Team Members:** `mewaysi` and `mal-jama`
 
----
+## 1. Division of Responsibilities
 
-## 1. Roles & Core Responsibilities
+We split the project along clean MVC boundaries so both teammates could work in parallel with minimal merge conflicts:
 
-| Area | Primary Owner | Secondary / Reviewer | Key Responsibilities |
-|---|:---:|:---:|---|
-| **Engine & Graphics** | `mewaysi` | `mal-jama` | Pygame window, Rendering pipeline, Tile drawing, UI Menus, HUD |
-| **Maze Adapter & Wheel** | `mal-jama` | `mewaysi` | External wheel integration (`mazegenerator`), data translation, grid format |
-| **Game Physics & Collision** | `mal-jama` | `mewaysi` | Pac-Man corridor movement, collision math, corner placement |
-| **Ghost AI & Behaviors** | `mal-jama` | `mewaysi` | State machine (`CHASE`, `FRIGHTENED`, `EATEN`), targeting logic, respawn |
-| **Config & Persistence** | `mewaysi` | `mal-jama` | Comment-aware JSON parser (`#`), default clamping, Highscore JSON |
-| **Cheat System** | `mal-jama` | `mewaysi` | Peer-review cheat keybindings (Invincibility, Level Skip, Freeze) |
-| **Packaging & Deployment**| `mewaysi` | `mal-jama` | PyInstaller standalone packaging, Itch.io upload & testing |
-| **Quality & Standards** | Both | Both | `flake8` compliance, `mypy` strict typing, PEP 257 docstrings |
+| Member | Role | Owned Modules |
+| --- | --- | --- |
+| **`mewaysi`** | **Part 1 — Game Engine, Maze & Gameplay** | `pacman/models.py`, `pacman/ghost_ai.py`, `pacman/maze_adapter.py`, `pacman/cheats.py` |
+| **`mal-jama`** | **Part 2 — UI, Application, Services & Release** | `pac-man.py`, `pacman/app.py`, `pacman/graphics.py`, `pacman/rendering.py`, `pacman/configuration.py`, `pacman/highscores.py`, `pacman/error_logging.py`, `build_release.sh`, `pacman.spec` |
+| **Both** | **Integration & Quality** | `Makefile`, `README.md`, `flake8` / `mypy --strict`, headless smoke tests, and joint defense prep |
 
----
+## 2. How We Worked Together
 
-## 2. Decision-Making & Conflict Resolution
-- **Technical Disagreements:** If we debate an architectural choice (e.g., how to represent tiles or state), we test both with a quick 15-minute prototype and choose the simpler, more testable option.
-- **Git Strategy:** All new work is done on feature branches (e.g. `feature/adapter`, `feature/ghosts`). Merging into `main` requires both teammates' review and passing `make lint`.
-- **Daily Standup:** At the beginning of each session, spend 5 minutes reviewing yesterday's tasks and confirming today's to-do items from `daily_plan.md`.
+- **Shared Interfaces:** `App` (`mal-jama`) communicates with `Game` (`mewaysi`) only through public methods (`start()`, `set_direction()`, `update(dt)`, `pause()`, `cheat()`). Neither side mutates the other's internals directly.
+- **Decision Making:** When evaluating two technical options (for example, how to handle wall masks or highscore storage), we compared simplicity, testability, and strict compliance with the 42 subject before committing.
+- **Code Quality Gate:** Every change had to pass `make lint` (`flake8` + `mypy`), `make lint-strict`, and `make smoke` before being merged.

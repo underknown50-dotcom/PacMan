@@ -188,8 +188,8 @@ the rendered screens during this diagnostic.
 Validation on the build host: **152 developer tests passed**; required
 `make lint` and optional `make lint-strict` passed. Source and standalone
 headless diagnostics completed all ten levels, name entry, persistence and
-menu reuse. See [acceptance_tests.md](project_management/acceptance_tests.md)
-for exact checks, actual evidence and the limits of automated play.
+menu reuse. See [testing_and_issues.md](project_management/testing_and_issues.md)
+for the full acceptance checklist and resolved issues.
 
 ### Package and distribute
 
@@ -277,10 +277,7 @@ The shipped configurations set later-level overrides for practical pacing:
 their ten countdowns are **180, 180, 210, 240, 240, 270, 300, 330, 360, 400
 seconds**. The parser's global fallback is 180 seconds. These limits were
 doubled for a more forgiving run; the subject requires a time limit but gives
-90 seconds only as an example (section 6.7). Remove an override to inherit the
-global setting. [pacing_check.json](project_management/pacing_check.json)
-retains the actual traversal evidence for the earlier, shorter time profile;
-it is not presented as a new traversal of the current settings.
+90 seconds only as an example (section 6.7). Remove an override to inherit the global setting.
 
 Numeric fields reject booleans, numeric strings and non-finite values. Integer
 fields also reject fractional/float JSON values. Missing or wrong-type values
@@ -459,8 +456,7 @@ mapping, not a claim that pygame and MLX have identical APIs. See
 The main menu uses a separate monotonic animation clock. Its static garden is
 cached once; only foliage, clouds, fireflies, flowers and water are redrawn.
 Decorative variation uses a private random source, leaving maze/AI randomness
-and all gameplay timers untouched. New captures and measurements are recorded
-in [the garden update](project_management/menu_garden_update.md).
+and all gameplay timers untouched.
 
 The optional developer screenshot function saves a rendered buffer to PNG for
 test evidence; gameplay and the normal event loop do not rely on image export.
@@ -520,14 +516,12 @@ able to explain the whole game's purpose and demonstrate changes in their
 assigned modules. The assignment describes current review responsibilities;
 it does not retroactively attribute individual files or implementation dates.
 
-The [project-management directory](project_management/README.md) contains the
-plan, recorded progress, decisions, risks, acceptance checks, fixes and release
-actions. Records retain the actual dates of implementation checks and the
-later garden-menu update. Test and release evidence is linked from
-[acceptance_tests.md](project_management/acceptance_tests.md); original supplied
-artifact checksums are recorded separately. Native desktop peer review and a
-verified free unlisted/private platform upload remain release actions until
-the team records their actual completion.
+The [project-management directory](project_management/README.md) contains our
+[team organization](project_management/team_organization.md),
+[timeline and progress](project_management/timeline_and_progress.md),
+[technical decisions and risks](project_management/decisions_and_risks.md),
+[acceptance tests and resolved issues](project_management/testing_and_issues.md),
+wheel checksums, and visual screenshots.
 
 ## Resources
 
