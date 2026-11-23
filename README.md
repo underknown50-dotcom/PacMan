@@ -152,7 +152,7 @@ local leaderboard. This is an explicit review-friendly policy.
 | `make debug CONFIG=config.json` | Run the same entry point under `pdb` |
 | `make lint` | Run the exact subject-required flake8/mypy commands |
 | `make lint-strict` | Run flake8 and `mypy . --strict` |
-| `make test` | Run developer tests in `dev_tests/` |
+| `make test` | Run local developer tests if present (excluded from Git per Chapter 3.3) |
 | `make smoke` | Run the real frontend with SDL's dummy video driver |
 | `make release` | Build and archive the Linux standalone distribution |
 | `make clean` | Remove known build/type/test caches and bytecode |
@@ -185,7 +185,7 @@ and an extended first-level diagnostic timer. It is not evidence of an
 unassisted human playthrough. Optional `PACMAN_SCREENSHOTS=<directory>` captures
 the rendered screens during this diagnostic.
 
-Validation on the build host: **152 developer tests passed**; required
+Validation on the build host: **213 developer tests passed** locally (`dev_tests/` is excluded from Git per Chapter 3.3); required
 `make lint` and optional `make lint-strict` passed. Source and standalone
 headless diagnostics completed all ten levels, name entry, persistence and
 menu reuse. See [testing_and_issues.md](project_management/testing_and_issues.md)
@@ -472,7 +472,7 @@ rendered application evidence, not claimed screenshots of a human playthrough.
 | `pacman/configuration.py` | Immutable `GameConfig` / `LevelConfig`, repairs, safe paths |
 | `pacman/maze_adapter.py` | `Maze`, `Direction`, validation and BFS topology |
 | `pacman/models.py` | `Game`, `Actor`, `Ghost`, `State`, timers and rules |
-| `pacman/ghost_ai.py` | Chase/flee neighbor selection |
+| `pacman/ghost_ai.py` | Blinky/Pinky/Inky/Clyde targeting and chase/flee selection |
 | `pacman/cheats.py` | Resettable review-mode flags |
 | `pacman/highscores.py` | `ScoreEntry`, `HighScoreStore`, validation/atomic persistence |
 | `pacman/error_logging.py` | `ErrorLogSession`, rotating UTC diagnostics and console fallback |
@@ -482,7 +482,6 @@ rendered application evidence, not claimed screenshots of a human playthrough.
 | `pacman/finish_background.py` | `FinishBackground`, distinct animated victory/loss gardens |
 | `pacman/rendering.py` | `Renderer`, visual presentation from model state |
 | `pacman/smoke.py` | Opt-in integrated application diagnostic |
-| `dev_tests/` | Developer-only unit and integration checks |
 | `pacman.spec`, `build_release.sh` | Reproducible standalone packaging |
 
 Data flows from configuration into the model and score store, from the assigned
